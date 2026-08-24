@@ -1,4 +1,4 @@
-const APP_VERSION = "2.3.1";
+const APP_VERSION = "2.3.2";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
@@ -508,6 +508,7 @@ function renderSpelling(ref) {
   $("spellWord").innerHTML = `<span>${escapeHtml(focus.before)}</span><b>${"_".repeat(Math.max(1, focus.gap.length))}</b><span>${escapeHtml(focus.after)}</span>`;
   $("spellWord").classList.remove("locked");
   $("spellClue").textContent = memory.wins >= 2 ? `${focus.sound} · 先靠声音选` : `${focus.sound} · ${focus.clue}`;
+  $("spellAudioStatus").textContent = "点粉色播放键，听清关键词再选";
   $("spellResult").textContent = "";
   $("spellOptions").innerHTML = shuffled(focus.options).map(option => `<button type="button" data-spell-option="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("");
   $("spellOptions").querySelectorAll("[data-spell-option]").forEach(button => button.addEventListener("click", () => answerSpelling(ref, button)));
@@ -522,6 +523,7 @@ function answerSpelling(ref, button) {
     button.disabled = true;
     button.classList.add("wrong");
     $("spellResult").textContent = "差一点。再听一次声音，换一块。";
+    $("spellAudioStatus").textContent = "再点一次播放键，重点听缺失的声音";
     saveState(false);
     return;
   }
@@ -529,7 +531,7 @@ function answerSpelling(ref, button) {
   $("spellWord").textContent = focus.word;
   $("spellWord").classList.add("locked");
   $("spellResult").textContent = `锁住了。现在把 ${focus.word} 放回整句，大声说一遍。`;
-  speakText(focus.word, .66);
+  playSpellingWord(ref);
   saveState(false);
 }
 
@@ -540,11 +542,15 @@ function renderTranscript(scene) {
 
 function selectVoice() {
   const voices = speechSynthesis.getVoices();
-  return voices.find(voice => /^en(-|_)/i.test(voice.lang) && /Samantha|Google US English|Daniel|Ava/i.test(voice.name)) || voices.find(voice => /^en(-|_)/i.test(voice.lang)) || null;
+  return voices.find(voice => /^en(-|_)/i.test(voice.lang) && /Eddy|Reed|Daniel|Alex|Google US English/i.test(voice.name)) || voices.find(voice => /^en(-|_)/i.test(voice.lang)) || null;
 }
 
 function bundledAudioPath(line) {
   return ["social-1", "work-1"].includes(line.id) ? null : `audio/${line.id}.m4a`;
+}
+
+function bundledSpellingAudioPath(line) {
+  return `audio/word-${line.id}.m4a`;
 }
 
 function nativeAudioPlugin() {
@@ -628,11 +634,35 @@ async function speakCurrent(rate) {
   if (!played) toast("音频播放失败，请截图这一页发给我。");
 }
 
+async function playSpellingAudio(ref) {
+  const focus = spellingFocus(ref);
+  if (!focus) return false;
+  const path = bundledSpellingAudioPath(ref.line);
+  let played = await playNativeBundledAudio(path, 1);
+  if (!played) played = await playAudioUrl(path, 1);
+  if (!played) played = await speakTextPromise(focus.word, .76);
+  return played;
+}
+
+async function playSpellingWord(ref) {
+  const focus = spellingFocus(ref);
+  if (!focus) return false;
+  const button = $("spellHearBtn");
+  button.disabled = true;
+  button.classList.add("is-playing");
+  $("spellAudioStatus").textContent = `🔊 正在播放 ${focus.word}…`;
+  const played = await playSpellingAudio(ref);
+  button.disabled = false;
+  button.classList.remove("is-playing");
+  $("spellAudioStatus").textContent = played ? `听到了：${focus.word} · 现在补回字母` : "播放失败，请先把媒体音量调高后再试";
+  if (!played) toast("关键词音频播放失败，请截图这一页发给我。");
+  return played;
+}
+
 function speakCurrentSpellingWord() {
   const scene = sceneById(currentSceneId);
   const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
-  const focus = spellingFocus(ref);
-  if (focus) speakText(focus.word, .62);
+  playSpellingWord(ref);
 }
 
 function speakText(text, rate = .78) {
@@ -1056,16 +1086,16 @@ function renderListeningQuestion(ref) {
   $("quizPrompt").innerHTML = `<div><small>听英文，选出对应意思</small><button class="button listen-main" id="quizListen" type="button">▶ 播放英文</button></div>`;
   const options = shuffled([ref, ...alternativeRefs(ref, "zh")]);
   $("quizInteraction").innerHTML = options.map(option => `<button class="choice" type="button" data-correct="${option.line.id === ref.line.id}">${escapeHtml(displayText(option.line.zh))}</button>`).join("");
-  $("quizListen").addEventListener("click", () => speakText(ref.line.en, .7));
+  $("quizListen").addEventListener("click", () => playOriginal(ref, .88));
   $("quizInteraction").querySelectorAll(".choice").forEach(button => button.addEventListener("click", () => gradeChoice(button, button.dataset.correct === "true", ref, displayText(ref.line.zh))));
-  setTimeout(() => speakText(ref.line.en, .7), 200);
+  setTimeout(() => playOriginal(ref, .88), 200);
 }
 
 function renderSpellingQuestion(ref) {
   const focus = spellingFocus(ref);
   $("quizPrompt").innerHTML = `<div><small>${escapeHtml(displayText(ref.line.zh))}</small><button class="quiz-spell-sound" id="quizSpellSound" type="button" aria-label="播放关键词">▶</button><strong class="quiz-spell-word" lang="en">${escapeHtml(spellingMask(focus))}</strong></div>`;
   $("quizInteraction").innerHTML = shuffled(focus.options).map(option => `<button class="choice spell-choice" type="button" data-spell="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("");
-  $("quizSpellSound").addEventListener("click", () => speakText(focus.word, .62));
+  $("quizSpellSound").addEventListener("click", () => playSpellingAudio(ref));
   $("quizInteraction").querySelectorAll("[data-spell]").forEach(button => button.addEventListener("click", () => {
     if (quizLocked) return;
     quizLocked = true;
@@ -1079,7 +1109,7 @@ function renderSpellingQuestion(ref) {
     $("quizPrompt").querySelector(".quiz-spell-word").textContent = focus.word;
     finishQuizAnswer(correct, ref, correct ? `锁住 ${focus.word}，把它说回整句。` : `这一块是 ${focus.gap}：${focus.word}`);
   }));
-  setTimeout(() => speakText(focus.word, .62), 180);
+  setTimeout(() => playSpellingAudio(ref), 180);
 }
 
 function gradeChoice(button, correct, ref, correctText) {

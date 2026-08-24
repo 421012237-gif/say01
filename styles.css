@@ -833,9 +833,19 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
   background: transparent;
   color: var(--acid);
   font-weight: 950;
+  display: grid;
+  place-content: center;
+  gap: 1px;
+  transition: transform .18s ease, background .18s ease, color .18s ease;
 }
+.spell-sound span { font-size: 17px; line-height: 1; }
+.spell-sound small { font-size: 8px; font-weight: 950; letter-spacing: .08em; }
+.spell-sound.is-playing { background: var(--acid); color: var(--ink); animation: spell-pulse .75s ease-in-out infinite alternate; }
+.spell-sound:disabled { opacity: 1; }
+@keyframes spell-pulse { to { transform: scale(1.08); box-shadow: 0 0 24px rgba(255,43,214,.46); } }
+.spell-audio-status { width: 68%; min-height: 16px; margin: 0 0 9px; color: var(--acid); font-size: 10px; font-weight: 850; }
 .spell-word {
-  margin: 26px 0 8px;
+  margin: 14px 0 8px;
   color: var(--paper);
   font: italic 950 clamp(50px, 15vw, 75px)/.9 Georgia, serif;
   letter-spacing: .02em;
