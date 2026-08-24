@@ -1,4 +1,4 @@
-const CACHE = "say01-runtime-v2.3";
+const CACHE = "say01-runtime-v2.3.1";
 const CORE = [
   "./",
   "./index.html",

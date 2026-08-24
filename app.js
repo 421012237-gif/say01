@@ -1,4 +1,4 @@
-const APP_VERSION = "2.3";
+const APP_VERSION = "2.3.1";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
@@ -402,7 +402,7 @@ function updateAll() {
   $("heroSpellEcho").textContent = nextSpell ? `WORD ECHO · ${spellingMask(nextSpell)}` : "WORD ECHO · SAY IT";
   $("continueBtn").dataset.scene = next.scene.id;
   $("continueBtn").dataset.phrase = next.index;
-  $("continueBtn").textContent = state.known.length ? "NEXT DROP · 继续开口 →" : "DROP 01 · 现在开口 →";
+  $("continueBtn").textContent = state.known.length ? "继续今天的练习 →" : "第一步 · 点这里开始 →";
   $("dailyGoalLabel").textContent = `目标 ${target} 句`;
   $("todayProgressText").textContent = `${Math.min(todayCount, target)} / ${target}`;
   $("todayProgressFill").style.width = `${Math.min(todayCount / target * 100, 100)}%`;
@@ -493,6 +493,7 @@ function renderPhrase() {
   $("phraseMission").textContent = line.mission;
   $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
   $("knownBtn").textContent = state.known.includes(line.id) ? "已拿下 · 下一句 →" : "拿下这句 · 下一句 →";
+  $("audioStatus").textContent = "等待播放";
   $("pronunciationDetails").open = false;
   renderSpelling({ scene, line, index: currentPhraseIndex });
   renderTranscript(scene);
@@ -546,50 +547,85 @@ function bundledAudioPath(line) {
   return ["social-1", "work-1"].includes(line.id) ? null : `audio/${line.id}.m4a`;
 }
 
+function nativeAudioPlugin() {
+  return isNativeAndroid() ? window.Capacitor?.Plugins?.SayAudio : null;
+}
+
 function speakTextPromise(text, rate = .78) {
   return new Promise(resolve => {
-    if (!("speechSynthesis" in window)) { resolve(); return; }
+    if (!("speechSynthesis" in window)) { resolve(false); return; }
     let settled = false;
-    const finish = () => { if (settled) return; settled = true; clearTimeout(timer); resolve(); };
-    const timer = setTimeout(finish, Math.max(3500, String(text).length * 180));
+    const finish = success => { if (settled) return; settled = true; clearTimeout(timer); resolve(success); };
+    const timer = setTimeout(() => finish(false), Math.max(3500, String(text).length * 180));
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(displayText(text));
     utterance.lang = "en-US";
     utterance.rate = rate;
     utterance.voice = selectVoice();
-    utterance.onend = finish;
-    utterance.onerror = finish;
+    utterance.onend = () => finish(true);
+    utterance.onerror = () => finish(false);
     speechSynthesis.speak(utterance);
   });
 }
 
 function playAudioUrl(url, rate = 1) {
   return new Promise(resolve => {
-    const audio = new Audio(url);
+    const audio = new Audio(new URL(url, document.baseURI).href);
     activeOriginalAudio?.pause();
     activeOriginalAudio = audio;
+    audio.preload = "auto";
+    audio.muted = false;
+    audio.volume = 1;
     audio.playbackRate = rate;
-    const finish = () => { if (activeOriginalAudio === audio) activeOriginalAudio = null; resolve(); };
-    audio.onended = finish;
-    audio.onerror = finish;
-    audio.play().catch(finish);
+    let settled = false;
+    const finish = success => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (activeOriginalAudio === audio) activeOriginalAudio = null;
+      resolve(success);
+    };
+    const timer = setTimeout(() => finish(false), 10000);
+    audio.onended = () => finish(true);
+    audio.onerror = () => finish(false);
+    audio.load();
+    audio.play().catch(() => finish(false));
   });
+}
+
+async function playNativeBundledAudio(path, rate) {
+  const plugin = nativeAudioPlugin();
+  if (!plugin) return false;
+  try {
+    const result = await plugin.play({ file: path.split("/").pop(), rate });
+    return result?.ok !== false;
+  } catch {
+    return false;
+  }
 }
 
 async function playOriginal(ref, rate = 1, countMetric = false) {
   const path = bundledAudioPath(ref.line);
-  if (path) await playAudioUrl(path, rate);
-  else await speakTextPromise(ref.line.en, rate < .8 ? .62 : .9);
+  let played = path ? await playNativeBundledAudio(path, rate) : false;
+  if (!played && path) played = await playAudioUrl(path, rate);
+  if (!played) played = await speakTextPromise(ref.line.en, rate < .8 ? .62 : .9);
   if (countMetric) {
     state.metrics.audioPlays++;
     saveState(false);
   }
+  return played;
 }
 
-function speakCurrent(rate) {
+async function speakCurrent(rate) {
   const scene = sceneById(currentSceneId);
   const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
-  playOriginal(ref, rate, true);
+  const controls = [$("lessonStartAudio"), $("slowSoundBtn"), $("normalSoundBtn")];
+  controls.forEach(button => { button.disabled = true; button.classList.add("is-playing"); });
+  $("audioStatus").textContent = "🔊 正在播放…如果没听到，请先按手机侧边音量＋";
+  const played = await playOriginal(ref, rate, true);
+  controls.forEach(button => { button.disabled = false; button.classList.remove("is-playing"); });
+  $("audioStatus").textContent = played ? "播放完成。没听到？按手机侧边音量＋后再点一次。" : "播放失败。请确认媒体音量已打开，再重试。";
+  if (!played) toast("音频播放失败，请截图这一页发给我。");
 }
 
 function speakCurrentSpellingWord() {
@@ -1288,6 +1324,7 @@ function bindEvents() {
   $("knownBtn").addEventListener("click", markCurrentKnown);
   $("slowSoundBtn").addEventListener("click", () => speakCurrent(.72));
   $("normalSoundBtn").addEventListener("click", () => speakCurrent(1));
+  $("lessonStartAudio").addEventListener("click", () => speakCurrent(1));
   $("spellHearBtn").addEventListener("click", speakCurrentSpellingWord);
   $("recordBtn").addEventListener("click", toggleRecording);
   $("compareBtn").addEventListener("click", compareRecording);

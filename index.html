@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.3">
+  <link rel="stylesheet" href="styles.css?v=2.3.1">
   <title>SAY/01｜先开口，自然记住</title>
 </head>
 <body>
@@ -43,7 +43,7 @@
           <button type="button" data-minutes="10" aria-pressed="false">10 分钟</button>
         </div>
       </fieldset>
-      <button class="button primary full" type="button" id="finishOnboarding">DROP 01 · 说出第一句 →</button>
+      <button class="button primary full" type="button" id="finishOnboarding">保存选择 · 开始第一句 →</button>
       <p class="privacy-line">无需账号。学习记录留在本机；可选语音识别会单独说明。</p>
     </div>
   </section>
@@ -127,15 +127,16 @@
           <button class="text-button" type="button" id="backToLessons">← 返回场景</button>
           <div class="lesson-heading"><div><span class="micro" id="lessonNumber">SCENE 01</span><h2 id="lessonName">咖啡店点单</h2></div><span class="lesson-step" id="lessonStep">1 / 5</span></div>
           <div class="context-strip"><span>情境</span><p id="lessonContext"></p></div>
-          <details class="transcript" id="dialogueDetails"><summary>先看完整微对话 <span>展开</span></summary><div id="dialogueTranscript"></div></details>
-          <button class="roleplay-entry" type="button" id="startRoleplay"><span>LIVE SCENE</span><strong>进入完整角色扮演</strong><small>系统演对方，你来回答自己的台词</small><b aria-hidden="true">↗</b></button>
+          <div class="lesson-steps" aria-label="本句练习顺序"><span><b>1</b>先听</span><span><b>2</b>跟说</span><span><b>3</b>下一句</span></div>
+          <button class="lesson-start-audio" type="button" id="lessonStartAudio"><span>STEP 1 / LISTEN</span><strong>点这里，先听一遍</strong><small>听不到时按手机侧边音量＋，再点一次</small><b aria-hidden="true">▶</b></button>
+          <p class="audio-status" id="audioStatus" aria-live="polite">等待播放</p>
           <article class="phrase-card">
             <div class="phrase-grid" aria-hidden="true"><span class="phrase-deco">/</span></div>
             <div class="phrase-top"><span id="speakerBadge">YOU</span><span id="phraseIndex">LINE 01</span></div>
             <div class="english" lang="en" id="phraseEnglish">A coffee, please.</div>
             <div class="chinese" id="phraseChinese">请给我一杯咖啡。</div>
             <details class="pronunciation" id="pronunciationDetails"><summary>发音辅助 <span>需要时再看</span></summary><div class="rhythm" id="phraseRhythm" lang="en"></div><p id="phrasePronounce"></p><small>中文近似音只帮助第一次开口，最终以英文示范发音为准。</small></details>
-            <div class="audio-actions"><button class="button acid-button" type="button" id="slowSoundBtn">▶ 慢速示范</button><button class="button dark-outline" type="button" id="normalSoundBtn">▶ 正常示范</button></div>
+            <div class="audio-actions"><button class="button acid-button" type="button" id="normalSoundBtn">▶ 再听正常示范</button><button class="button dark-outline" type="button" id="slowSoundBtn">▶ 听慢速</button></div>
             <section class="spell-lock" id="spellLock" aria-labelledby="spellTitle">
               <span class="spell-deco" aria-hidden="true">LOCK</span>
               <div class="spell-head"><span>WORD LOCK / 拼写暗线</span><small id="spellLevel">第 1 次遇见</small></div>
@@ -162,6 +163,8 @@
           </section>
           <div class="mission-note"><span>TODAY'S MOVE</span><p id="phraseMission"></p></div>
           <div class="lesson-controls"><button class="button light" type="button" id="prevPhrase">← 上一句</button><button class="button acid-button" type="button" id="knownBtn">拿下这句 · 下一句 →</button></div>
+          <details class="transcript" id="dialogueDetails"><summary>需要时查看完整微对话 <span>展开</span></summary><div id="dialogueTranscript"></div></details>
+          <button class="roleplay-entry" type="button" id="startRoleplay"><span>学完本场景后再来</span><strong>进入完整角色扮演</strong><small>系统演对方，你来回答自己的台词</small><b aria-hidden="true">↗</b></button>
         </div>
       </section>
 
@@ -206,6 +209,6 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="app.js?v=2.3" defer></script>
+  <script src="app.js?v=2.3.1" defer></script>
 </body>
 </html>

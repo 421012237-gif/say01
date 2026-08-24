@@ -280,6 +280,18 @@ p { line-height: 1.65; }
 .context-strip { padding: 14px; border-left: 5px solid var(--acid); background: var(--surface-2); }
 .context-strip span { color: var(--acid); font-size: 10px; font-weight: 950; letter-spacing: .14em; }
 .context-strip p { margin: 4px 0 0; color: var(--silver); font-size: 13px; line-height: 1.5; }
+.lesson-steps { margin: 18px 0 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.lesson-steps span { min-height: 38px; display: flex; align-items: center; gap: 7px; color: var(--silver); font-size: 11px; font-weight: 850; }
+.lesson-steps b { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--acid); color: var(--ink); font-size: 11px; }
+.lesson-start-audio { width: 100%; min-height: 92px; padding: 16px 18px; border: 0; border-radius: 46px 0 46px 0; background: var(--acid); color: var(--ink); display: grid; grid-template-columns: 1fr auto; text-align: left; cursor: pointer; box-shadow: 0 0 30px rgba(255,43,214,.3); }
+.lesson-start-audio span, .lesson-start-audio strong, .lesson-start-audio small { grid-column: 1; display: block; }
+.lesson-start-audio span { font-size: 9px; font-weight: 950; letter-spacing: .16em; }
+.lesson-start-audio strong { margin: 3px 0; font-size: 20px; }
+.lesson-start-audio small { color: #5d0648; font-size: 11px; }
+.lesson-start-audio > b { grid-column: 2; grid-row: 1 / span 3; align-self: center; width: 48px; height: 48px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 50%; font-size: 20px; }
+.lesson-start-audio.is-playing, .audio-actions .is-playing { animation: audio-pulse .65s ease-in-out infinite alternate; }
+@keyframes audio-pulse { to { filter: brightness(1.2); box-shadow: 0 0 0 7px rgba(255,43,214,.14), 0 0 36px rgba(255,43,214,.45); } }
+.audio-status { min-height: 21px; margin: 7px 5px 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .transcript { margin: 12px 0; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); overflow: hidden; }
 .transcript summary, .pronunciation summary { list-style: none; cursor: pointer; }
 .transcript summary::-webkit-details-marker, .pronunciation summary::-webkit-details-marker { display: none; }
@@ -758,7 +770,7 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
 .phrase-card {
   min-height: 680px;
   width: auto;
-  margin: 24px -18px 0;
+  margin: 10px -18px 0;
   padding: 82px 22px 43px;
   border: 0;
   border-radius: 0;

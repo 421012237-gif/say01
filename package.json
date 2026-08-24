@@ -1,6 +1,6 @@
 {
   "name": "say01-android",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": true,
   "description": "SAY/01 Android self-test package",
   "scripts": {
