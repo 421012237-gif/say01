@@ -1,8 +1,42 @@
-const APP_VERSION = "2.2";
+const APP_VERSION = "2.3";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 const DAILY_TARGETS = { 3: 3, 5: 5, 10: 8 };
+
+// 每句只绑定一个“声音—字母—意思”钩子，避免把零基础学习变成整页默写。
+const SPELLING_FOCUS = {
+  "cafe-1": { word: "get", before: "", gap: "g", after: "et", sound: "GET /ɡet/", clue: "g 发 /g/，后面是 et", options: ["g", "j", "k"] },
+  "cafe-2": { word: "coffee", before: "co", gap: "ff", after: "ee", sound: "COF · FEE", clue: "中间双 f，结尾双 e", options: ["ff", "f", "ph"] },
+  "cafe-3": { word: "iced", before: "ice", gap: "d", after: "", sound: "ICED /aɪst/", clue: "ice 后面补 d，变成“冰的”", options: ["d", "t", "ed"] },
+  "cafe-4": { word: "sugar", before: "su", gap: "g", after: "ar", sound: "SU · GAR", clue: "中间是 g，不是 j", options: ["g", "j", "gg"] },
+  "cafe-5": { word: "thank", before: "", gap: "th", after: "ank", sound: "THANK /θæŋk/", clue: "开头 th：舌尖轻碰牙齿", options: ["th", "t", "s"] },
+  "travel-1": { word: "station", before: "sta", gap: "tion", after: "", sound: "STA · TION", clue: "结尾 tion 常读 /ʃən/", options: ["tion", "shun", "sion"] },
+  "travel-2": { word: "straight", before: "str", gap: "aigh", after: "t", sound: "STRAIGHT /streɪt/", clue: "中间 aigh，最后还有 t", options: ["aigh", "ai", "ei"] },
+  "travel-3": { word: "help", before: "he", gap: "l", after: "p", sound: "HELP /help/", clue: "听见 /l/，写一个 l", options: ["l", "ll", "r"] },
+  "travel-4": { word: "ticket", before: "tic", gap: "k", after: "et", sound: "TICK · ET", clue: "tic 后再补一个 k", options: ["k", "c", "ck"] },
+  "travel-5": { word: "much", before: "mu", gap: "ch", after: "", sound: "MUCH /mʌtʃ/", clue: "结尾 /tʃ/ 写 ch", options: ["ch", "tch", "sh"] },
+  "social-1": { word: "hi", before: "", gap: "h", after: "i", sound: "HI /haɪ/", clue: "开头轻轻送气：h", options: ["h", "wh", "j"] },
+  "social-2": { word: "meet", before: "m", gap: "ee", after: "t", sound: "MEET /miːt/", clue: "长音 /iː/ 在这里写 ee", options: ["ee", "e", "ea"] },
+  "social-3": { word: "where", before: "", gap: "wh", after: "ere", sound: "WHERE /wer/", clue: "问“哪里”，开头是 wh", options: ["wh", "w", "h"] },
+  "social-4": { word: "China", before: "Ch", gap: "i", after: "na", sound: "CHI · NA", clue: "Chi 中间是 i", options: ["i", "ai", "e"] },
+  "social-5": { word: "English", before: "Eng", gap: "l", after: "ish", sound: "ENG · LISH", clue: "Eng 和 ish 中间连一个 l", options: ["l", "ll", "r"] },
+  "shopping-1": { word: "black", before: "bl", gap: "a", after: "ck", sound: "BLACK /blæk/", clue: "中间短音 /æ/ 写 a", options: ["a", "e", "u"] },
+  "shopping-2": { word: "size", before: "s", gap: "i", after: "ze", sound: "SIZE /saɪz/", clue: "中间 i 在这里读 /aɪ/", options: ["i", "y", "ai"] },
+  "shopping-3": { word: "medium", before: "me", gap: "di", after: "um", sound: "ME · DI · UM", clue: "中间一拍写 di", options: ["di", "de", "dee"] },
+  "shopping-4": { word: "much", before: "mu", gap: "ch", after: "", sound: "MUCH /mʌtʃ/", clue: "结尾 /tʃ/ 写 ch", options: ["ch", "tch", "sh"] },
+  "shopping-5": { word: "take", before: "t", gap: "a", after: "ke", sound: "TAKE /teɪk/", clue: "a_e 让 a 读自己的名字", options: ["a", "ai", "e"] },
+  "work-1": { word: "new", before: "n", gap: "ew", after: "", sound: "NEW /njuː/", clue: "结尾 /uː/ 在这里写 ew", options: ["ew", "oo", "u"] },
+  "work-2": { word: "welcome", before: "wel", gap: "come", after: "", sound: "WEL · COME", clue: "wel 后接完整的 come", options: ["come", "cam", "cum"] },
+  "work-3": { word: "could", before: "c", gap: "oul", after: "d", sound: "COULD /kʊd/", clue: "看见 oul，但只听到短短一拍", options: ["oul", "oo", "ol"] },
+  "work-4": { word: "course", before: "c", gap: "our", after: "se", sound: "COURSE /kɔːrs/", clue: "中间写 our", options: ["our", "or", "oor"] },
+  "work-5": { word: "appreciate", before: "ap", gap: "pre", after: "ciate", sound: "AP · PRE · CI · ATE", clue: "ap 后面接 pre", options: ["pre", "pri", "per"] },
+  "rescue-1": { word: "sorry", before: "so", gap: "rr", after: "y", sound: "SOR · RY", clue: "中间双 r", options: ["rr", "r", "wr"] },
+  "rescue-2": { word: "speak", before: "sp", gap: "ea", after: "k", sound: "SPEAK /spiːk/", clue: "长音 /iː/ 在这里写 ea", options: ["ea", "ee", "e"] },
+  "rescue-3": { word: "again", before: "a", gap: "gai", after: "n", sound: "A · GAIN", clue: "中间连写 gai", options: ["gai", "gei", "ga"] },
+  "rescue-4": { word: "mean", before: "m", gap: "ea", after: "n", sound: "MEAN /miːn/", clue: "长音 /iː/ 在这里写 ea", options: ["ea", "ee", "e"] },
+  "rescue-5": { word: "right", before: "r", gap: "igh", after: "t", sound: "RIGHT /raɪt/", clue: "中间 igh，最后还有 t", options: ["igh", "ai", "ie"] }
+};
 
 const scenes = [
   {
@@ -137,11 +171,12 @@ function emptyState() {
     known: [],
     learnedAt: {},
     reviews: {},
+    spelling: {},
     best: 0,
     days: [],
     todayKnown: {},
     rate: .68,
-    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, activeDates: [] },
+    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, activeDates: [] },
     migrations: []
   };
 }
@@ -162,10 +197,11 @@ function sanitizeState(raw) {
   const validIds = new Set(allPhraseRefs().map(ref => ref.line.id));
   merged.learnedAt = Object.fromEntries(Object.entries(merged.learnedAt && typeof merged.learnedAt === "object" ? merged.learnedAt : {}).filter(([id, date]) => validIds.has(id) && /^\d{4}-\d{2}-\d{2}$/.test(date)));
   merged.reviews = Object.fromEntries(Object.entries(merged.reviews && typeof merged.reviews === "object" ? merged.reviews : {}).filter(([id, review]) => validIds.has(id) && review && /^\d{4}-\d{2}-\d{2}$/.test(review.due || "")).map(([id, review]) => [id, { level: Math.max(0, Math.min(4, Number(review.level) || 0)), due: review.due, successes: Math.max(0, Number(review.successes) || 0), lapses: Math.max(0, Number(review.lapses) || 0), lastMs: Math.max(0, Number(review.lastMs) || 0) }]));
+  merged.spelling = Object.fromEntries(Object.entries(merged.spelling && typeof merged.spelling === "object" ? merged.spelling : {}).filter(([id]) => validIds.has(id)).map(([id, item]) => [id, { wins: Math.max(0, Math.min(99, Number(item?.wins) || 0)), attempts: Math.max(0, Math.min(999, Number(item?.attempts) || 0)), lastSeen: /^\d{4}-\d{2}-\d{2}$/.test(item?.lastSeen || "") ? item.lastSeen : localDateKey() }]));
   merged.todayKnown = Object.fromEntries(Object.entries(merged.todayKnown && typeof merged.todayKnown === "object" ? merged.todayKnown : {}).filter(([date, ids]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(ids)).map(([date, ids]) => [date, [...new Set(ids.filter(id => validIds.has(id)))]]));
   merged.metrics = Object.assign(emptyState().metrics, merged.metrics || {});
   merged.metrics.activeDates = Array.isArray(merged.metrics.activeDates) ? [...new Set(merged.metrics.activeDates)] : [];
-  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
+  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
   merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
   if (merged.profile) {
     merged.profile.name = cleanName(merged.profile.name) || "Alex";
@@ -254,6 +290,31 @@ function shuffled(values) {
   return copy;
 }
 
+function spellingFocus(ref) {
+  return SPELLING_FOCUS[ref?.line?.id] || null;
+}
+
+function spellingMask(focus, complete = false) {
+  if (!focus) return "";
+  const gap = complete ? focus.gap : "_".repeat(Math.max(1, focus.gap.length));
+  return `${focus.before}${gap}${focus.after}`;
+}
+
+function spellingWordCount() {
+  return Object.values(state.spelling || {}).filter(item => item.wins > 0).length;
+}
+
+function recordSpelling(ref, correct) {
+  const current = state.spelling[ref.line.id] || { wins: 0, attempts: 0, lastSeen: localDateKey() };
+  state.spelling[ref.line.id] = {
+    wins: Math.min(99, current.wins + (correct ? 1 : 0)),
+    attempts: current.attempts + 1,
+    lastSeen: localDateKey()
+  };
+  state.metrics.spellingAttempts++;
+  if (correct) state.metrics.spellingWins++;
+}
+
 function orderedScenes() {
   const order = courseOrders[state.profile?.goal || "daily"];
   return order.map(sceneById);
@@ -333,6 +394,8 @@ function updateAll() {
   $("missionNumber").textContent = String(state.known.length + 1).padStart(2, "0");
   $("heroEnglish").textContent = displayText(next.line.en);
   $("heroChinese").textContent = displayText(next.line.zh);
+  const nextSpell = spellingFocus(next);
+  $("heroSpellEcho").textContent = nextSpell ? `WORD ECHO · ${spellingMask(nextSpell)}` : "WORD ECHO · SAY IT";
   $("continueBtn").dataset.scene = next.scene.id;
   $("continueBtn").dataset.phrase = next.index;
   $("continueBtn").textContent = state.known.length ? "NEXT DROP · 继续开口 →" : "DROP 01 · 现在开口 →";
@@ -354,9 +417,10 @@ function updateAll() {
   $("reviewNextLarge").textContent = nextReviewLabel();
   $("profileKnown").textContent = state.known.length;
   $("profileDone").textContent = completedSceneCount();
+  $("profileSpelling").textContent = spellingWordCount();
   $("profileReview").textContent = state.metrics.reviewAnswers;
   $("profileRecordings").textContent = state.metrics.recordings;
-  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
+  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
 
   if (state.profile) {
     $("profileName").value = state.profile.name;
@@ -426,7 +490,42 @@ function renderPhrase() {
   $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
   $("knownBtn").textContent = state.known.includes(line.id) ? "已拿下 · 下一句 →" : "拿下这句 · 下一句 →";
   $("pronunciationDetails").open = false;
+  renderSpelling({ scene, line, index: currentPhraseIndex });
   renderTranscript(scene);
+}
+
+function renderSpelling(ref) {
+  const focus = spellingFocus(ref);
+  if (!focus) { $("spellLock").hidden = true; return; }
+  $("spellLock").hidden = false;
+  const memory = state.spelling[ref.line.id] || { wins: 0 };
+  $("spellLevel").textContent = memory.wins ? `已经撞见 ${memory.wins + 1} 次` : "第 1 次遇见";
+  $("spellWord").innerHTML = `<span>${escapeHtml(focus.before)}</span><b>${"_".repeat(Math.max(1, focus.gap.length))}</b><span>${escapeHtml(focus.after)}</span>`;
+  $("spellWord").classList.remove("locked");
+  $("spellClue").textContent = memory.wins >= 2 ? `${focus.sound} · 先靠声音选` : `${focus.sound} · ${focus.clue}`;
+  $("spellResult").textContent = "";
+  $("spellOptions").innerHTML = shuffled(focus.options).map(option => `<button type="button" data-spell-option="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("");
+  $("spellOptions").querySelectorAll("[data-spell-option]").forEach(button => button.addEventListener("click", () => answerSpelling(ref, button)));
+}
+
+function answerSpelling(ref, button) {
+  const focus = spellingFocus(ref);
+  if (!focus || button.disabled) return;
+  const correct = button.dataset.spellOption === focus.gap;
+  recordSpelling(ref, correct);
+  if (!correct) {
+    button.disabled = true;
+    button.classList.add("wrong");
+    $("spellResult").textContent = "差一点。再听一次声音，换一块。";
+    saveState(false);
+    return;
+  }
+  $("spellOptions").querySelectorAll("button").forEach(option => { option.disabled = true; option.classList.toggle("correct", option === button); });
+  $("spellWord").textContent = focus.word;
+  $("spellWord").classList.add("locked");
+  $("spellResult").textContent = `锁住了。现在把 ${focus.word} 放回整句，大声说一遍。`;
+  speakText(focus.word, .66);
+  saveState(false);
 }
 
 function renderTranscript(scene) {
@@ -487,6 +586,13 @@ function speakCurrent(rate) {
   const scene = sceneById(currentSceneId);
   const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
   playOriginal(ref, rate, true);
+}
+
+function speakCurrentSpellingWord() {
+  const scene = sceneById(currentSceneId);
+  const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
+  const focus = spellingFocus(ref);
+  if (focus) speakText(focus.word, .62);
 }
 
 function speakText(text, rate = .78) {
@@ -675,7 +781,11 @@ function renderRoleplayLine(autoPlayPartner = false) {
   $("roleCue").textContent = userTurn ? "轮到你回答。先自己说，需要时再看英文提示。" : "先听对方说什么，再继续。";
   $("roleEnglish").textContent = displayText(line.en);
   $("roleEnglish").classList.toggle("concealed", userTurn);
+  $("roleEnglish").setAttribute("aria-hidden", userTurn ? "true" : "false");
   $("roleChinese").textContent = displayText(line.zh);
+  const focus = spellingFocus({ scene, line, index: roleIndex });
+  $("roleSpellCue").hidden = !userTurn || !focus;
+  $("roleSpellCue").textContent = focus ? `MEMORY ECHO · ${spellingMask(focus)}` : "";
   $("rolePlayBtn").hidden = false;
   $("rolePlayBtn").textContent = userTurn ? "▶ 听示范" : "▶ 播放对方";
   $("roleHintBtn").hidden = !userTurn;
@@ -692,7 +802,11 @@ function renderRoleplayLine(autoPlayPartner = false) {
 
 function revealRoleHint() {
   $("roleEnglish").classList.remove("concealed");
+  $("roleEnglish").setAttribute("aria-hidden", "false");
   $("roleHintBtn").hidden = true;
+  const scene = sceneById(roleSceneId);
+  const focus = spellingFocus({ scene, line: scene.lines[roleIndex], index: roleIndex });
+  if (focus) $("roleSpellCue").textContent = `WORD LOCKED · ${focus.word}`;
 }
 
 function playRoleOriginal() {
@@ -853,8 +967,9 @@ function startQuiz() {
 }
 
 function quizModeFor(ref, index) {
-  const modes = ["translation", "listening", "ordering", "recall", "translation"];
+  const modes = ["translation", "listening", "spelling", "recall", "ordering"];
   const words = cleanWords(displayText(ref.line.en));
+  if (modes[index] === "spelling" && !spellingFocus(ref)) return "translation";
   return modes[index] === "ordering" && words.length < 2 ? "translation" : modes[index];
 }
 
@@ -866,7 +981,7 @@ function renderQuizQuestion() {
   questionStartedAt = performance.now();
   const ref = quizItems[quizIndex];
   const mode = quizModeFor(ref, quizIndex);
-  const modeNames = { translation: "看中文 · 选英文", listening: "听示范 · 选意思", ordering: "重组句子", recall: "主动回忆" };
+  const modeNames = { translation: "看中文 · 选英文", listening: "听示范 · 选意思", spelling: "听声音 · 补拼写", ordering: "重组句子", recall: "主动回忆" };
   $("quizMode").textContent = modeNames[mode];
   $("quizStep").textContent = `${quizIndex + 1} / 5`;
   $("quizProgress").style.width = `${quizIndex / 5 * 100}%`;
@@ -875,6 +990,7 @@ function renderQuizQuestion() {
   $("quizInteraction").innerHTML = "";
   if (mode === "translation") renderTranslationQuestion(ref);
   if (mode === "listening") renderListeningQuestion(ref);
+  if (mode === "spelling") renderSpellingQuestion(ref);
   if (mode === "ordering") renderOrderingQuestion(ref);
   if (mode === "recall") renderRecallQuestion(ref);
 }
@@ -903,6 +1019,27 @@ function renderListeningQuestion(ref) {
   $("quizListen").addEventListener("click", () => speakText(ref.line.en, .7));
   $("quizInteraction").querySelectorAll(".choice").forEach(button => button.addEventListener("click", () => gradeChoice(button, button.dataset.correct === "true", ref, displayText(ref.line.zh))));
   setTimeout(() => speakText(ref.line.en, .7), 200);
+}
+
+function renderSpellingQuestion(ref) {
+  const focus = spellingFocus(ref);
+  $("quizPrompt").innerHTML = `<div><small>${escapeHtml(displayText(ref.line.zh))}</small><button class="quiz-spell-sound" id="quizSpellSound" type="button" aria-label="播放关键词">▶</button><strong class="quiz-spell-word" lang="en">${escapeHtml(spellingMask(focus))}</strong></div>`;
+  $("quizInteraction").innerHTML = shuffled(focus.options).map(option => `<button class="choice spell-choice" type="button" data-spell="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("");
+  $("quizSpellSound").addEventListener("click", () => speakText(focus.word, .62));
+  $("quizInteraction").querySelectorAll("[data-spell]").forEach(button => button.addEventListener("click", () => {
+    if (quizLocked) return;
+    quizLocked = true;
+    const correct = button.dataset.spell === focus.gap;
+    recordSpelling(ref, correct);
+    $("quizInteraction").querySelectorAll("[data-spell]").forEach(option => {
+      option.disabled = true;
+      if (option.dataset.spell === focus.gap) option.classList.add("correct");
+    });
+    if (!correct) button.classList.add("wrong");
+    $("quizPrompt").querySelector(".quiz-spell-word").textContent = focus.word;
+    finishQuizAnswer(correct, ref, correct ? `锁住 ${focus.word}，把它说回整句。` : `这一块是 ${focus.gap}：${focus.word}`);
+  }));
+  setTimeout(() => speakText(focus.word, .62), 180);
 }
 
 function gradeChoice(button, correct, ref, correctText) {
@@ -1130,6 +1267,7 @@ function bindEvents() {
   $("knownBtn").addEventListener("click", markCurrentKnown);
   $("slowSoundBtn").addEventListener("click", () => speakCurrent(.72));
   $("normalSoundBtn").addEventListener("click", () => speakCurrent(1));
+  $("spellHearBtn").addEventListener("click", speakCurrentSpellingWord);
   $("recordBtn").addEventListener("click", toggleRecording);
   $("compareBtn").addEventListener("click", compareRecording);
   document.querySelectorAll("[data-record-grade]").forEach(button => button.addEventListener("click", () => gradeRecording(button.dataset.recordGrade)));

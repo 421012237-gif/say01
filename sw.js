@@ -1,4 +1,4 @@
-const CACHE = "xiaobai-english-runtime";
+const CACHE = "say01-runtime-v2.3";
 const CORE = [
   "./",
   "./index.html",
