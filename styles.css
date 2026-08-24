@@ -874,6 +874,7 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
 .record-status { margin-top: 12px; }
 .recognition-box { width: 78%; margin: 25px auto 0; }
 .recognition-box .text-button { min-height: 44px; }
+.update-banner button { min-height: 44px; }
 .mission-note { width: 82%; margin: 27px 0 28px auto; padding: 13px 0 13px 17px; border: 0; border-left: 2px solid var(--acid); background: transparent; }
 .lesson-controls { position: relative; margin: 0 -8px; padding: 8px; background: transparent; }
 .lesson-controls .button { border-radius: 999px; box-shadow: none; }
