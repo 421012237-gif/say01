@@ -1,4 +1,4 @@
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
@@ -100,7 +100,7 @@ const courseOrders = {
 
 const legacyEnglish = [
   ["Hi.", "Hello.", "Good morning.", "See you."],
-  ["My name is Xiaobai.", "Nice to meet you.", "Where are you from?", "I am from China."],
+  ["My name is Alex.", "Nice to meet you.", "Where are you from?", "I am from China."],
   ["A coffee, please.", "I want water.", "No sugar, please.", "Thank you."],
   ["Where is the station?", "One ticket, please.", "I need help.", "How much is it?"],
   ["I like this.", "Do you have black?", "Too expensive.", "I will take it."],
@@ -168,7 +168,7 @@ function sanitizeState(raw) {
   ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
   merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
   if (merged.profile) {
-    merged.profile.name = cleanName(merged.profile.name) || "Xiaobai";
+    merged.profile.name = cleanName(merged.profile.name) || "Alex";
     merged.profile.goal = courseOrders[merged.profile.goal] ? merged.profile.goal : "daily";
     merged.profile.minutes = [3, 5, 10].includes(Number(merged.profile.minutes)) ? Number(merged.profile.minutes) : 5;
   }
@@ -184,7 +184,7 @@ function migrateLegacy() {
     const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
     if (!legacy) return null;
     const next = emptyState();
-    next.profile = { name: "小白", goal: "daily", minutes: 5 };
+    next.profile = { name: "Alex", goal: "daily", minutes: 5 };
     next.best = Number(legacy.best || 0);
     next.rate = Number(legacy.rate || .68);
     next.migrations.push({ from: "v1", to: APP_VERSION, date: localDateKey() });
@@ -241,7 +241,7 @@ function saveState(render = true) {
 }
 
 function displayText(text) {
-  const name = state.profile?.name || "小白";
+  const name = state.profile?.name || "Alex";
   return String(text).replaceAll("{name}", name);
 }
 
@@ -335,7 +335,7 @@ function updateAll() {
   $("heroChinese").textContent = displayText(next.line.zh);
   $("continueBtn").dataset.scene = next.scene.id;
   $("continueBtn").dataset.phrase = next.index;
-  $("continueBtn").textContent = state.known.length ? "继续今天的表达 →" : "开始今天的表达 →";
+  $("continueBtn").textContent = state.known.length ? "NEXT DROP · 继续开口 →" : "DROP 01 · 现在开口 →";
   $("dailyGoalLabel").textContent = `目标 ${target} 句`;
   $("todayProgressText").textContent = `${Math.min(todayCount, target)} / ${target}`;
   $("todayProgressFill").style.width = `${Math.min(todayCount / target * 100, 100)}%`;
@@ -992,12 +992,12 @@ function finishQuiz() {
 }
 
 function exportProgress() {
-  const payload = { app: "小白英语", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
+  const payload = { app: "SAY/01", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `小白英语进度-${localDateKey()}.json`;
+  anchor.download = `SAY01进度-${localDateKey()}.json`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -1022,7 +1022,7 @@ function importProgress(file) {
       saveState();
       showView("home");
       toast("进度已经恢复。");
-    } catch { toast("这个文件不是有效的小白英语进度。"); }
+    } catch { toast("这个文件不是有效的 SAY/01 进度。"); }
     $("importFile").value = "";
   };
   reader.readAsText(file);
@@ -1045,13 +1045,13 @@ function createCalendarReminder() {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Xiaobai English//Daily Practice//ZH",
+    "PRODID:-//SAY01//Daily Practice//ZH",
     "BEGIN:VEVENT",
     `UID:xiaobai-english-${Date.now()}@local`,
     `DTSTART:${calendarDate(start)}`,
     "RRULE:FREQ=DAILY",
     `DURATION:PT${duration}M`,
-    "SUMMARY:小白英语｜今天开口一句",
+    "SUMMARY:SAY/01｜今天开口一句",
     `DESCRIPTION:用 ${duration} 分钟完成一句真实英语表达。无需连续完美，只要今天开口。`,
     "END:VEVENT",
     "END:VCALENDAR"
@@ -1060,7 +1060,7 @@ function createCalendarReminder() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "小白英语每日提醒.ics";
+  anchor.download = "SAY01每日提醒.ics";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -1100,7 +1100,7 @@ function selectExclusive(container, button, selector) {
 function finishOnboarding() {
   const goal = $("onboardingGoals").querySelector(".selected").dataset.goal;
   const minutes = Number($("onboardingTimes").querySelector(".selected").dataset.minutes);
-  const name = cleanName($("onboardingName").value) || "Xiaobai";
+  const name = cleanName($("onboardingName").value) || "Alex";
   state.profile = { name, goal, minutes };
   $("onboarding").hidden = true;
   $("app").inert = false;
@@ -1111,8 +1111,8 @@ function finishOnboarding() {
 }
 
 function saveSettings() {
-  state.profile = state.profile || { name: "小白", goal: "daily", minutes: 5 };
-  state.profile.name = cleanName($("profileName").value) || "Xiaobai";
+  state.profile = state.profile || { name: "Alex", goal: "daily", minutes: 5 };
+  state.profile.name = cleanName($("profileName").value) || "Alex";
   state.profile.goal = $("goalSelect").value;
   state.profile.minutes = Number($("minutesSelect").value);
   state.rate = Number($("rateSelect").value);
