@@ -146,6 +146,10 @@ const allPhraseRefs = () => scenes.flatMap(scene => scene.lines.map((line, index
 const phraseRefById = id => allPhraseRefs().find(ref => ref.line.id === id);
 const sceneById = id => scenes.find(scene => scene.id === id);
 
+function isNativeAndroid() {
+  return window.Capacitor?.getPlatform?.() === "android";
+}
+
 function localDateKey(date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -1206,9 +1210,26 @@ function createCalendarReminder() {
 }
 
 function showToastInstallHelp() {
+  if (isNativeAndroid()) {
+    toast("你现在就在 SAY/01 安卓 App 里。");
+    return;
+  }
   const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   $("installTip").hidden = false;
   $("installTip").textContent = isiOS ? "iPhone：点 Safari 底部的分享按钮，再选择“添加到主屏幕”。" : "Android：打开浏览器右上角菜单，选择“添加到主屏幕”或“安装应用”。";
+}
+
+function configureRuntimeSurface() {
+  if (!isNativeAndroid()) return;
+  document.documentElement.classList.add("native-android");
+  const installButton = $("installBtn");
+  const setting = installButton.closest(".setting-row");
+  setting.querySelector("strong").textContent = "安卓 App 已安装";
+  setting.querySelector("small").textContent = "学习记录保存在这个 App 的本机空间";
+  installButton.textContent = "已安装";
+  installButton.disabled = true;
+  $("installTip").hidden = false;
+  $("installTip").textContent = "网页版与 App 的进度彼此独立；需要迁移时使用下方导入 / 导出。";
 }
 
 function toast(message) {
@@ -1301,6 +1322,7 @@ function bindEvents() {
     showView("home");
   });
   $("installBtn").addEventListener("click", async () => {
+    if (isNativeAndroid()) { showToastInstallHelp(); return; }
     if (!deferredInstall) { showToastInstallHelp(); return; }
     deferredInstall.prompt();
     await deferredInstall.userChoice;
@@ -1315,7 +1337,7 @@ function bindEvents() {
 }
 
 function setupServiceWorker() {
-  if (!("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
+  if (isNativeAndroid() || !("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
   const hadController = Boolean(navigator.serviceWorker.controller);
   navigator.serviceWorker.register("sw.js").then(registration => {
     registration.update().catch(() => {});
@@ -1331,6 +1353,7 @@ function setupServiceWorker() {
 
 function initialize() {
   bindEvents();
+  configureRuntimeSurface();
   state.metrics.openings++;
   saveState(false);
   updateAll();

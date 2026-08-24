@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#08070a"/>
+  <path d="M-30 408 330-38h96L66 408Z" fill="#ff2bd6"/>
+  <path d="M0 463h512" stroke="#ff2bd6" stroke-width="18"/>
+  <text x="132" y="332" fill="#fff9fd" font-family="Arial Black,Arial,sans-serif" font-size="224" font-weight="900" letter-spacing="-24">01</text>
+  <text x="54" y="92" fill="#ff2bd6" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" letter-spacing="8">SAY</text>
+</svg>

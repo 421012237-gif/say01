@@ -1,0 +1,10 @@
+{
+  "appId": "com.say01.english",
+  "appName": "SAY/01",
+  "webDir": "app-web",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
