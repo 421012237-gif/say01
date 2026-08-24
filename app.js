@@ -1,4 +1,4 @@
-const APP_VERSION = "2.3.2";
+const APP_VERSION = "2.3.3";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
@@ -493,7 +493,7 @@ function renderPhrase() {
   $("phraseMission").textContent = line.mission;
   $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
   $("knownBtn").textContent = state.known.includes(line.id) ? "已拿下 · 下一句 →" : "拿下这句 · 下一句 →";
-  $("audioStatus").textContent = "等待播放";
+  $("audioStatus").textContent = ["social-1", "work-1"].includes(line.id) ? "示范会在名字处停一下，轮到你说自己的名字" : "等待播放";
   $("pronunciationDetails").open = false;
   renderSpelling({ scene, line, index: currentPhraseIndex });
   renderTranscript(scene);
@@ -542,11 +542,11 @@ function renderTranscript(scene) {
 
 function selectVoice() {
   const voices = speechSynthesis.getVoices();
-  return voices.find(voice => /^en(-|_)/i.test(voice.lang) && /Eddy|Reed|Daniel|Alex|Google US English/i.test(voice.name)) || voices.find(voice => /^en(-|_)/i.test(voice.lang)) || null;
+  return voices.find(voice => /^en(-|_)/i.test(voice.lang) && /Ava|Emma|Jenny|Aria|Samantha|Google US English/i.test(voice.name)) || voices.find(voice => /^en(-|_)/i.test(voice.lang)) || null;
 }
 
 function bundledAudioPath(line) {
-  return ["social-1", "work-1"].includes(line.id) ? null : `audio/${line.id}.m4a`;
+  return `audio/${line.id}.m4a`;
 }
 
 function bundledSpellingAudioPath(line) {

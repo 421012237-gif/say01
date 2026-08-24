@@ -1,11 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const audioRoot = resolve(projectRoot, "audio");
-const voice = process.env.SAY01_AUDIO_VOICE || "Eddy (English (US))";
+const voice = process.env.SAY01_AUDIO_VOICE || "en-US-AvaNeural";
+const edgeTts = process.env.SAY01_EDGE_TTS || "edge-tts";
 
 // Punctuation is deliberately performance-oriented: questions lift, friendly replies
 // breathe, and rescue phrases stay calm. The visible lesson copy remains unchanged.
@@ -20,6 +22,7 @@ const sentenceLines = [
   ["travel-3", "Thank you for your help!", 170],
   ["travel-4", "One ticket, please.", 172],
   ["travel-5", "How much is it?", 174],
+  ["social-1", "Hi! I'm...", 168],
   ["social-2", "Nice to meet you!", 172],
   ["social-3", "Where are you from?", 174],
   ["social-4", "I'm from China.", 172],
@@ -29,6 +32,7 @@ const sentenceLines = [
   ["shopping-3", "Medium, please.", 172],
   ["shopping-4", "How much is it?", 174],
   ["shopping-5", "I'll take it!", 172],
+  ["work-1", "Hi! I'm... I'm new here.", 168],
   ["work-2", "Welcome to the team!", 174],
   ["work-3", "Could you help me?", 172],
   ["work-4", "Of course!", 172],
@@ -52,14 +56,22 @@ const spellingWords = [
 mkdirSync(audioRoot, { recursive: true });
 
 function generate(fileName, text, rate) {
-  execFileSync("say", [
-    "-v", voice,
-    "-r", String(rate),
-    "-o", resolve(audioRoot, fileName),
-    "--data-format=aac",
-    "--bit-rate=64000",
-    text
-  ], { stdio: "inherit" });
+  const tempRoot = mkdtempSync(join(tmpdir(), "say01-natural-audio-"));
+  const mp3 = resolve(tempRoot, "voice.mp3");
+  const ratePercent = `${rate >= 174 ? "+" : ""}${rate - 174}%`;
+  const pitch = text.includes("?") ? "+10Hz" : text.includes("!") ? "+9Hz" : "+8Hz";
+  try {
+    execFileSync(edgeTts, [
+      "--voice", voice,
+      "--rate", ratePercent,
+      "--pitch", pitch,
+      "--text", text,
+      "--write-media", mp3
+    ], { stdio: "inherit" });
+    execFileSync("afconvert", [mp3, "-o", resolve(audioRoot, fileName), "-f", "m4af", "-d", "aac "], { stdio: "inherit" });
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 }
 
 for (const [id, text, rate] of sentenceLines) generate(`${id}.m4a`, text, rate);

@@ -1,10 +1,10 @@
-const CACHE = "say01-runtime-v2.3.2";
+const CACHE = "say01-runtime-v2.3.3";
 const SENTENCE_AUDIO_IDS = [
   "cafe-1", "cafe-2", "cafe-3", "cafe-4", "cafe-5",
   "travel-1", "travel-2", "travel-3", "travel-4", "travel-5",
-  "social-2", "social-3", "social-4", "social-5",
+  "social-1", "social-2", "social-3", "social-4", "social-5",
   "shopping-1", "shopping-2", "shopping-3", "shopping-4", "shopping-5",
-  "work-2", "work-3", "work-4", "work-5",
+  "work-1", "work-2", "work-3", "work-4", "work-5",
   "rescue-1", "rescue-2", "rescue-3", "rescue-4", "rescue-5"
 ];
 const SPELLING_AUDIO_IDS = [

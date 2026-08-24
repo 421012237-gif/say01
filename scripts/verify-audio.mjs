@@ -20,8 +20,8 @@ for (const id of focusIds) {
 const files = readdirSync(audioRoot).filter(file => file.endsWith(".m4a")).sort();
 const sentenceFiles = files.filter(file => !file.startsWith("word-"));
 const wordFiles = files.filter(file => file.startsWith("word-"));
-if (sentenceFiles.length !== 28 || wordFiles.length !== 30) {
-  throw new Error(`Expected 28 sentence + 30 word files, found ${sentenceFiles.length} + ${wordFiles.length}`);
+if (sentenceFiles.length !== 30 || wordFiles.length !== 30) {
+  throw new Error(`Expected 30 sentence + 30 word files, found ${sentenceFiles.length} + ${wordFiles.length}`);
 }
 
 let shortest = { file: "", duration: Infinity };
