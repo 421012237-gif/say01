@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f0ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="小白英语">
+  <meta name="description" content="为成年英语零基础用户设计的免费手机口语练习工具">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>小白英语｜成年人零基础开口</title>
+</head>
+<body>
+  <div class="update-banner" id="updateBanner" hidden><span>新版已经准备好</span><button type="button" id="reloadUpdate">立即更新</button></div>
+
+  <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle" hidden>
+    <div class="onboarding-card">
+      <div class="onboarding-mark" aria-hidden="true">XB</div>
+      <div class="kicker">YOUR ENGLISH. YOUR PACE.</div>
+      <h1 id="onboardingTitle">先选你真正<br>想用英语的地方。</h1>
+      <p>不做水平测试，也不从语法第一章开始。我们直接从你最可能遇到的真实场景开口。</p>
+      <label class="field-label" for="onboardingName">你的英文名或拼音</label>
+      <input class="text-input" id="onboardingName" maxlength="18" placeholder="例如：Jason / Xiaojie" autocomplete="nickname">
+      <fieldset class="choice-fieldset">
+        <legend>你最想先用在哪里？</legend>
+        <div class="goal-grid" id="onboardingGoals">
+          <button type="button" class="goal-option selected" data-goal="daily" aria-pressed="true"><span>日常</span><small>咖啡、购物、生活</small></button>
+          <button type="button" class="goal-option" data-goal="travel" aria-pressed="false"><span>旅行</span><small>问路、交通、住宿</small></button>
+          <button type="button" class="goal-option" data-goal="social" aria-pressed="false"><span>社交</span><small>认识人、简单聊天</small></button>
+          <button type="button" class="goal-option" data-goal="work" aria-pressed="false"><span>工作</span><small>介绍、会议、协作</small></button>
+        </div>
+      </fieldset>
+      <fieldset class="choice-fieldset compact-fieldset">
+        <legend>每天给自己几分钟？</legend>
+        <div class="time-grid" id="onboardingTimes">
+          <button type="button" data-minutes="3" aria-pressed="false">3 分钟</button>
+          <button type="button" class="selected" data-minutes="5" aria-pressed="true">5 分钟</button>
+          <button type="button" data-minutes="10" aria-pressed="false">10 分钟</button>
+        </div>
+      </fieldset>
+      <button class="button primary full" type="button" id="finishOnboarding">开始我的第一句 →</button>
+      <p class="privacy-line">无需账号。学习记录留在本机；可选语音识别会单独说明。</p>
+    </div>
+  </section>
+
+  <section class="roleplay-overlay" id="roleplayOverlay" aria-labelledby="roleplayTitle" hidden>
+    <div class="roleplay-shell">
+      <div class="roleplay-top"><span class="micro">LIVE SCENE</span><button type="button" id="closeRoleplay" aria-label="关闭角色扮演">×</button></div>
+      <div class="roleplay-progress"><div id="roleplayFill"></div></div>
+      <div id="roleplayStage">
+        <span class="role-speaker" id="roleSpeaker">STAFF</span>
+        <h2 id="roleplayTitle">咖啡店点单</h2>
+        <p class="role-cue" id="roleCue"></p>
+        <div class="role-english" lang="en" id="roleEnglish"></div>
+        <div class="role-chinese" id="roleChinese"></div>
+        <div class="role-actions">
+          <button class="button light" type="button" id="rolePlayBtn">▶ 播放对方</button>
+          <button class="button light" type="button" id="roleHintBtn">显示英文提示</button>
+          <button class="button record-button" type="button" id="roleRecordBtn">● 录下我的回答</button>
+        </div>
+        <audio id="rolePlayback" controls hidden></audio>
+        <p class="role-status" id="roleStatus" aria-live="polite"></p>
+        <button class="button primary full" type="button" id="roleNextBtn">继续对话 →</button>
+      </div>
+      <div class="roleplay-end" id="roleplayEnd" hidden>
+        <div class="quiz-mark" aria-hidden="true">DONE</div>
+        <h2>完整场景走完了</h2>
+        <p>现在回放一次：系统扮演对方，你的录音保留在自己的回答位置。</p>
+        <button class="button primary full" type="button" id="roleReplayAll">▶ 回放整段对话</button>
+        <button class="button light full" type="button" id="roleRestart">再演一次</button>
+        <button class="text-button full" type="button" id="roleFinish">回到课程</button>
+        <p class="role-status" id="roleReplayStatus" aria-live="polite"></p>
+      </div>
+      <p class="role-privacy">录音只在本次角色扮演中临时使用，关闭后释放。</p>
+    </div>
+  </section>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <button class="brand" type="button" data-go="home" aria-label="返回首页"><span class="brand-mark" aria-hidden="true">XB</span><span>小白英语</span></button>
+      <button class="streak" type="button" data-go="profile" aria-label="查看连续学习记录">STREAK&nbsp;<span id="streakCount">0</span></button>
+    </header>
+
+    <main>
+      <section class="view active" id="homeView" aria-labelledby="homeTitle">
+        <div class="hero">
+          <div class="hero-grid" aria-hidden="true"></div>
+          <div class="hero-topline"><span>DAILY MISSION / <span id="missionNumber">01</span></span><span id="minutesLabel">5 MIN</span></div>
+          <div class="kicker acid">START SMALL. SPEAK REAL.</div>
+          <h1 id="homeTitle">今天开口，<br>就算赢。</h1>
+          <p>不用背整页单词。拿下一句，今天就能用。</p>
+          <div class="hero-line"><span>TODAY'S LINE</span><strong lang="en" id="heroEnglish">Hi.</strong><small id="heroChinese">嗨，你好。</small></div>
+          <button class="button primary hero-button" type="button" id="continueBtn">开始今天的表达 →</button>
+        </div>
+
+        <div class="section-head"><h2>今日节奏</h2><span class="micro" id="dailyGoalLabel">目标 5 句</span></div>
+        <div class="panel progress-panel">
+          <div class="progress-top"><span>今天拿下</span><strong id="todayProgressText">0 / 5</strong></div>
+          <div class="track" aria-hidden="true"><div class="fill" id="todayProgressFill"></div></div>
+          <div class="metric-row"><div><strong id="dueCount">0</strong><span>待复习</span></div><div><strong id="weekKnown">0</strong><span>本周新句</span></div><div><strong id="quizBest">—</strong><span>最佳状态</span></div></div>
+        </div>
+
+        <div class="section-head"><h2>本周目标</h2><span class="micro">12 EXPRESSIONS</span></div>
+        <div class="panel weekly-panel"><div class="week-visual" id="weekDots" aria-label="本周学习进度"></div><div class="weekly-copy"><strong id="weeklyCopy">再拿下 12 句，形成第一组表达库存。</strong><span>不追求连续完美，只追求每周真的多会几句。</span></div></div>
+
+        <div class="section-head"><h2>下一个真实场景</h2><span class="micro">UP NEXT</span></div>
+        <button class="scene-preview" type="button" id="nextSceneBtn"><span class="scene-number" id="nextSceneNumber">01</span><span><strong id="nextSceneTitle">咖啡店点单</strong><small id="nextSceneDesc">从进门到拿到咖啡</small></span><span class="arrow" aria-hidden="true">↗</span></button>
+      </section>
+
+      <section class="view" id="lessonsView" aria-labelledby="lessonsTitle">
+        <div id="lessonIndex">
+          <div class="kicker">REAL-LIFE PLAYLIST</div>
+          <h1 id="lessonsTitle">真实生活<br>表达清单</h1>
+          <p class="intro-copy" id="courseIntro">先学你最需要的场景；顺序会跟着目标调整。</p>
+          <div class="lesson-list" id="lessonList"></div>
+        </div>
+        <div class="lesson-shell" id="lessonShell" hidden>
+          <button class="text-button" type="button" id="backToLessons">← 返回场景</button>
+          <div class="lesson-heading"><div><span class="micro" id="lessonNumber">SCENE 01</span><h2 id="lessonName">咖啡店点单</h2></div><span class="lesson-step" id="lessonStep">1 / 5</span></div>
+          <div class="context-strip"><span>情境</span><p id="lessonContext"></p></div>
+          <details class="transcript" id="dialogueDetails"><summary>先看完整微对话 <span>展开</span></summary><div id="dialogueTranscript"></div></details>
+          <button class="roleplay-entry" type="button" id="startRoleplay"><span>LIVE SCENE</span><strong>进入完整角色扮演</strong><small>系统演对方，你来回答自己的台词</small><b aria-hidden="true">↗</b></button>
+          <article class="phrase-card">
+            <div class="phrase-grid" aria-hidden="true"></div>
+            <div class="phrase-top"><span id="speakerBadge">YOU</span><span id="phraseIndex">LINE 01</span></div>
+            <div class="english" lang="en" id="phraseEnglish">A coffee, please.</div>
+            <div class="chinese" id="phraseChinese">请给我一杯咖啡。</div>
+            <details class="pronunciation" id="pronunciationDetails"><summary>发音辅助 <span>需要时再看</span></summary><div class="rhythm" id="phraseRhythm" lang="en"></div><p id="phrasePronounce"></p><small>中文近似音只帮助第一次开口，最终以英文示范发音为准。</small></details>
+            <div class="audio-actions"><button class="button acid-button" type="button" id="slowSoundBtn">▶ 慢速示范</button><button class="button dark-outline" type="button" id="normalSoundBtn">▶ 正常示范</button></div>
+            <div class="use-note"><span>什么时候用</span><p id="phraseWhen"></p></div>
+          </article>
+          <section class="record-panel" aria-labelledby="recordTitle">
+            <div><span class="micro">SHADOWING</span><h3 id="recordTitle">听完后，录下自己的一遍</h3></div>
+            <p>录音只在当前页面临时播放，不上传、不保存。</p>
+            <div class="record-actions"><button class="button record-button" type="button" id="recordBtn">● 开始录音</button><span class="record-status" id="recordStatus" aria-live="polite">等待跟读</span></div>
+            <audio id="recordingPlayback" controls hidden></audio>
+            <button class="button light full compare-button" type="button" id="compareBtn" hidden>▶ 示范 → 我的 → 示范</button>
+            <div class="self-grade recording-grade" id="recordingGrade" hidden><button class="button light" type="button" data-record-grade="again">还要再练</button><button class="button acid-button" type="button" data-record-grade="close">感觉接近了</button></div>
+            <div class="recognition-box">
+              <button class="text-button" type="button" id="recognizeBtn">可选：让浏览器识别我说了什么</button>
+              <p id="recognitionResult" aria-live="polite">识别不是发音评分；部分浏览器可能使用系统在线语音服务。</p>
+            </div>
+          </section>
+          <div class="mission-note"><span>TODAY'S MOVE</span><p id="phraseMission"></p></div>
+          <div class="lesson-controls"><button class="button light" type="button" id="prevPhrase">← 上一句</button><button class="button acid-button" type="button" id="knownBtn">拿下这句 · 下一句 →</button></div>
+        </div>
+      </section>
+
+      <section class="view" id="practiceView" aria-labelledby="practiceTitle">
+        <div class="kicker">SPACED REVIEW / 1·3·7·14·30</div>
+        <h1 id="practiceTitle">该复习的，<br>今天正好出现。</h1>
+        <p class="intro-copy">优先练到期和答错的表达，不把时间浪费在已经很熟的内容上。</p>
+        <div class="review-summary"><div><strong id="reviewDueLarge">0</strong><span>今天到期</span></div><div><strong id="reviewKnownLarge">0</strong><span>表达库存</span></div><div><strong id="reviewNextLarge">—</strong><span>下次复习</span></div></div>
+        <div class="quiz-start panel" id="quizStart"><div class="quiz-mark" aria-hidden="true">5X</div><h2>混合记忆检查</h2><p>中文选英文、听音选意、单词排序和主动回忆，五题完成一轮。</p><button class="button primary full" type="button" id="startQuiz">开始 MEMORY CHECK</button></div>
+        <div class="quiz-box panel" id="quizBox" hidden><div class="quiz-top"><span id="quizMode">主动回忆</span><span id="quizStep">1 / 5</span></div><div class="track" aria-hidden="true"><div class="fill" id="quizProgress"></div></div><div class="quiz-prompt" id="quizPrompt"></div><div class="quiz-interaction" id="quizInteraction"></div><div class="feedback" id="quizFeedback" aria-live="polite"></div></div>
+        <div class="result-box panel" id="resultBox" hidden><div class="quiz-mark" aria-hidden="true">OK</div><h2>今天的记忆已更新</h2><div class="result-score" id="resultScore">0/5</div><p id="resultMessage"></p><button class="button primary full" type="button" id="retryQuiz">再练一轮</button></div>
+      </section>
+
+      <section class="view" id="profileView" aria-labelledby="profileTitle">
+        <div class="kicker">YOUR OWN PACE</div>
+        <h1 id="profileTitle">你的学习<br>节奏</h1>
+        <div class="profile-stats"><div><strong id="profileKnown">0</strong><span>拿下表达</span></div><div><strong id="profileDone">0</strong><span>解锁场景</span></div><div><strong id="profileReview">0</strong><span>完成复习</span></div><div><strong id="profileRecordings">0</strong><span>完成跟读</span></div></div>
+        <section class="panel settings-panel" aria-labelledby="personalizeTitle">
+          <h2 id="personalizeTitle">个性化</h2>
+          <label class="setting-row"><span><strong>英文名或拼音</strong><small>用于自我介绍句</small></span><input class="small-input" id="profileName" maxlength="18"></label>
+          <label class="setting-row"><span><strong>优先目标</strong><small>决定场景顺序</small></span><select id="goalSelect"><option value="daily">日常生活</option><option value="travel">旅行出行</option><option value="social">社交聊天</option><option value="work">工作交流</option></select></label>
+          <label class="setting-row"><span><strong>每日节奏</strong><small>不追求过量</small></span><select id="minutesSelect"><option value="3">3 分钟</option><option value="5">5 分钟</option><option value="10">10 分钟</option></select></label>
+          <label class="setting-row"><span><strong>默认发音</strong><small>课程页仍可单独选择</small></span><select id="rateSelect"><option value="0.68">慢速</option><option value="0.9">正常</option><option value="1">较快</option></select></label>
+          <button class="button acid-button full" type="button" id="saveSettings">保存设置</button>
+        </section>
+        <section class="panel settings-panel" aria-labelledby="backupTitle">
+          <h2 id="backupTitle">本机记录与备份</h2><p>不注册账号也能迁移进度。导出的文件只包含称呼、学习记录和本机体验计数。</p>
+          <div class="two-buttons"><button class="button light" type="button" id="exportBtn">导出进度</button><button class="button light" type="button" id="importBtn">导入进度</button></div>
+          <input type="file" id="importFile" accept="application/json,.json" hidden><div class="local-metrics" id="localMetrics"></div>
+        </section>
+        <section class="panel settings-panel" aria-labelledby="deviceTitle">
+          <h2 id="deviceTitle">手机使用</h2>
+          <div class="setting-row"><span><strong>添加到手机桌面</strong><small>像普通 App 一样打开</small></span><button class="button acid-button" type="button" id="installBtn">添加</button></div>
+          <div class="setting-row"><span><strong>每日学习提醒</strong><small>生成本地日历提醒，不上传资料</small></span><button class="button light" type="button" id="calendarBtn">加到日历</button></div>
+          <div class="install-tip" id="installTip" hidden></div>
+          <div class="setting-row danger-row"><span><strong>清空学习记录</strong><small>此操作无法恢复</small></span><button class="button danger" type="button" id="resetBtn">清空</button></div>
+        </section>
+        <div class="privacy-card"><strong>FREE / NO ADS / NO LOGIN</strong><p>基础版永久免费。课程、进度和体验计数保存在本机；录音不上传且离开当前句子后释放。</p></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">⌂</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">▤</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">✦</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">●</span>我的</button></nav>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="app.js" defer></script>
+</body>
+</html>

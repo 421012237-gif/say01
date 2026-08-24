@@ -1,0 +1,15 @@
+{
+  "name": "小白英语｜成年人零基础开口",
+  "short_name": "小白英语",
+  "description": "为成年英语零基础用户设计的免费手机口语练习工具",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f0ea",
+  "theme_color": "#f1f0ea",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,1204 @@
+const APP_VERSION = "2.1";
+const STORAGE_KEY = "xiaobai-english-v2";
+const LEGACY_KEY = "xiaobai-english-v1";
+const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
+const DAILY_TARGETS = { 3: 3, 5: 5, 10: 8 };
+
+const scenes = [
+  {
+    id: "cafe",
+    goal: "daily",
+    title: "咖啡店点单",
+    desc: "从开口到完成点单",
+    context: "你走进一家咖啡店，店员准备帮你点单。",
+    lines: [
+      { id: "cafe-1", speaker: "STAFF", en: "Hi. What can I get for you?", zh: "你好，想要点什么？", pron: "嗨。沃特 看 爱 盖特 佛 优？", rhythm: ["Hi", "what", "can I", "GET", "for you"], when: "店员主动问你需要什么时。", mission: "先只听懂关键词 get 和 you，不必逐字翻译。" },
+      { id: "cafe-2", speaker: "YOU", en: "A coffee, please.", zh: "请给我一杯咖啡。", pron: "额 靠菲，普利兹。", rhythm: ["a", "COF-fee", "please"], when: "直接告诉店员你想要的饮品。", mission: "今天买饮料时，在心里完整说一遍这句话。" },
+      { id: "cafe-3", speaker: "STAFF", en: "Hot or iced?", zh: "热的还是冰的？", pron: "浩特 奥 爱斯特？", rhythm: ["HOT", "or", "ICED"], when: "店员确认温度时。", mission: "听示范三遍，只抓住 hot 和 iced 两个词。" },
+      { id: "cafe-4", speaker: "YOU", en: "Iced, please. No sugar.", zh: "请给我冰的，不要糖。", pron: "爱斯特，普利兹。耨 修格。", rhythm: ["ICED", "please", "no", "SU-gar"], when: "确认冰饮并说明不要糖。", mission: "把 iced 换成 hot，再分别说一遍。" },
+      { id: "cafe-5", speaker: "YOU", en: "That's all. Thank you.", zh: "就这些，谢谢。", pron: "再次 奥。三克 优。", rhythm: ["that's", "ALL", "THANK", "you"], when: "点完以后自然结束对话。", mission: "下一次完成任何点单后，尝试用 That's all 收尾。" }
+    ]
+  },
+  {
+    id: "travel",
+    goal: "travel",
+    title: "城市出行",
+    desc: "问路、找到车站、买票",
+    context: "你在陌生城市找车站，随后需要购买一张票。",
+    lines: [
+      { id: "travel-1", speaker: "YOU", en: "Excuse me. Where is the station?", zh: "不好意思，车站在哪里？", pron: "依克斯丘兹 米。外尔 依兹 泽 斯得神？", rhythm: ["ex-CUSE me", "WHERE", "is the", "STA-tion"], when: "礼貌地拦住别人问车站位置。", mission: "先练 Excuse me，让开口不再突兀。" },
+      { id: "travel-2", speaker: "LOCAL", en: "Go straight.", zh: "一直往前走。", pron: "勾 斯追特。", rhythm: ["GO", "STRAIGHT"], when: "别人给你最常见的直行指示。", mission: "听示范后，用手指向前方并说一遍。" },
+      { id: "travel-3", speaker: "YOU", en: "Thank you for your help.", zh: "谢谢你的帮助。", pron: "三克 优 佛 优 海尔普。", rhythm: ["THANK you", "for your", "HELP"], when: "别人帮你指路以后。", mission: "把这句和普通 Thank you 对比着说。" },
+      { id: "travel-4", speaker: "YOU", en: "One ticket, please.", zh: "请给我一张票。", pron: "万 提克特，普利兹。", rhythm: ["ONE", "TICK-et", "please"], when: "在人工窗口买一张票。", mission: "把 one 换成 two，练习买两张票。" },
+      { id: "travel-5", speaker: "YOU", en: "How much is it?", zh: "多少钱？", pron: "豪 马吃 依兹 依特？", rhythm: ["how MUCH", "is it"], when: "没有看清价格，想确认金额时。", mission: "看到任意商品价格时，先自己问一遍。" }
+    ]
+  },
+  {
+    id: "social",
+    goal: "social",
+    title: "社交破冰",
+    desc: "认识新朋友，不让对话停住",
+    context: "你在活动现场第一次认识一位新朋友。",
+    lines: [
+      { id: "social-1", speaker: "YOU", en: "Hi. I'm {name}.", zh: "你好，我是{name}。", pron: "嗨。爱姆 {name}。", rhythm: ["Hi", "I'M", "{name}"], when: "第一次见面，先告诉对方自己的名字。", mission: "换成自己的真实名字，连说三遍。" },
+      { id: "social-2", speaker: "OTHER", en: "Nice to meet you.", zh: "很高兴认识你。", pron: "奈斯 图 米特 优。", rhythm: ["NICE", "to", "MEET you"], when: "交换名字以后最自然的回应。", mission: "对着镜子微笑着说一遍，练习表情和声音一起出现。" },
+      { id: "social-3", speaker: "YOU", en: "Where are you from?", zh: "你来自哪里？", pron: "外尔 啊 优 弗若姆？", rhythm: ["WHERE", "are you", "FROM"], when: "想继续了解刚认识的人。", mission: "注意 are you 在真实语速里会连得很快。" },
+      { id: "social-4", speaker: "OTHER", en: "I'm from China.", zh: "我来自中国。", pron: "爱姆 弗若姆 拆一那。", rhythm: ["I'M", "from", "CHI-na"], when: "别人询问你来自哪里时。", mission: "把 China 换成自己的城市英文名再说一次。" },
+      { id: "social-5", speaker: "YOU", en: "I'm learning English.", zh: "我正在学英语。", pron: "爱姆 勒宁 英格利诗。", rhythm: ["I'm", "LEARN-ing", "ENG-lish"], when: "想坦然告诉对方自己还是学习者。", mission: "把它当成允许自己说错的开场白。" }
+    ]
+  },
+  {
+    id: "shopping",
+    goal: "daily",
+    title: "逛店购物",
+    desc: "问颜色、尺码和价格",
+    context: "你在服装店看到喜欢的款式，准备确认颜色和尺码。",
+    lines: [
+      { id: "shopping-1", speaker: "YOU", en: "Excuse me. Do you have this in black?", zh: "不好意思，这款有黑色的吗？", pron: "依克斯丘兹 米。度 优 海夫 迪斯 因 布莱克？", rhythm: ["ex-CUSE me", "do you HAVE", "this in", "BLACK"], when: "拿着一件商品询问其他颜色。", mission: "把 black 换成 white，再说一遍。" },
+      { id: "shopping-2", speaker: "STAFF", en: "What size do you need?", zh: "你需要什么尺码？", pron: "沃特 赛兹 度 优 尼德？", rhythm: ["what SIZE", "do you", "NEED"], when: "店员继续确认你的尺码。", mission: "只听 size 和 need，也能抓住问题意思。" },
+      { id: "shopping-3", speaker: "YOU", en: "Medium, please.", zh: "请给我中码。", pron: "米迪恩，普利兹。", rhythm: ["ME-di-um", "please"], when: "告诉店员你需要中码。", mission: "根据自己需要，把 Medium 换成 Small 或 Large。" },
+      { id: "shopping-4", speaker: "YOU", en: "How much is it?", zh: "这个多少钱？", pron: "豪 马吃 依兹 依特？", rhythm: ["how MUCH", "is it"], when: "商品没有明显价格标签时。", mission: "看到喜欢的东西，先自己问价格再看标签。" },
+      { id: "shopping-5", speaker: "YOU", en: "I'll take it.", zh: "我要了。", pron: "爱哦 忒克 依特。", rhythm: ["I'll", "TAKE it"], when: "试完以后决定购买。", mission: "把它和 I like it 连起来说：喜欢，然后决定买。" }
+    ]
+  },
+  {
+    id: "work",
+    goal: "work",
+    title: "工作初见",
+    desc: "介绍自己、请求帮助、开始协作",
+    context: "你第一天加入一个新团队，正在认识同事。",
+    lines: [
+      { id: "work-1", speaker: "YOU", en: "Hi. I'm {name}. I'm new here.", zh: "你好，我是{name}，我是新来的。", pron: "嗨。爱姆 {name}。爱姆 纽 希尔。", rhythm: ["Hi", "I'm", "{name}", "I'm NEW", "HERE"], when: "第一天进入新团队时做简短介绍。", mission: "把整句分成两口气说，不追求一次说完。" },
+      { id: "work-2", speaker: "OTHER", en: "Welcome to the team.", zh: "欢迎加入团队。", pron: "外尔肯 图 泽 提姆。", rhythm: ["WEL-come", "to the", "TEAM"], when: "同事欢迎你加入时。", mission: "听到 welcome 就知道对方在表达欢迎。" },
+      { id: "work-3", speaker: "YOU", en: "Could you help me?", zh: "你可以帮我一下吗？", pron: "库德 优 海尔普 米？", rhythm: ["could you", "HELP me"], when: "需要同事帮你完成一件事。", mission: "先说 Excuse me，再接这句话。" },
+      { id: "work-4", speaker: "OTHER", en: "Of course.", zh: "当然可以。", pron: "额夫 阔斯。", rhythm: ["of COURSE"], when: "对方表示愿意帮忙。", mission: "把它当成 Yes 的更自然替代。" },
+      { id: "work-5", speaker: "YOU", en: "Thank you. I appreciate it.", zh: "谢谢，我很感谢。", pron: "三克 优。爱 额普瑞西诶特 依特。", rhythm: ["THANK you", "I ap-PRE-ci-ate it"], when: "别人真正帮到你以后表达感谢。", mission: "先掌握 Thank you，后半句慢慢跟读即可。" }
+    ]
+  },
+  {
+    id: "rescue",
+    goal: "daily",
+    title: "听不懂时",
+    desc: "让对话慢下来，而不是沉默",
+    context: "对方说得太快，你需要礼貌地争取理解时间。",
+    lines: [
+      { id: "rescue-1", speaker: "YOU", en: "Sorry. I don't understand.", zh: "不好意思，我没听懂。", pron: "骚瑞。爱 冬特 安德斯坦德。", rhythm: ["SOR-ry", "I don't", "un-der-STAND"], when: "完全没有理解对方的意思。", mission: "说不懂不是失败，而是在继续对话；大声说一遍。" },
+      { id: "rescue-2", speaker: "YOU", en: "Please speak slowly.", zh: "请说慢一点。", pron: "普利兹 斯比克 斯洛利。", rhythm: ["please", "SPEAK", "SLOW-ly"], when: "知道对方在说什么，但语速太快。", mission: "把 slowly 拉长一点说，帮助对方理解你的需求。" },
+      { id: "rescue-3", speaker: "YOU", en: "Can you say that again?", zh: "你能再说一遍吗？", pron: "看 优 塞 载特 额根？", rhythm: ["can you", "SAY that", "a-GAIN"], when: "想请对方完整重复一遍。", mission: "跟着示范把 can you 连起来读。" },
+      { id: "rescue-4", speaker: "OTHER", en: "Do you mean this?", zh: "你的意思是这个吗？", pron: "度 优 明 迪斯？", rhythm: ["do you", "MEAN", "THIS"], when: "对方尝试确认你的意思。", mission: "抓住 mean 这个表示“意思是”的词。" },
+      { id: "rescue-5", speaker: "YOU", en: "Yes. That's right.", zh: "是的，没错。", pron: "耶斯。再次 赖特。", rhythm: ["YES", "that's", "RIGHT"], when: "对方终于理解正确时。", mission: "点头并说完整句，让声音和动作一起形成记忆。" }
+    ]
+  }
+];
+
+const courseOrders = {
+  daily: ["cafe", "shopping", "social", "rescue", "travel", "work"],
+  travel: ["travel", "rescue", "cafe", "social", "shopping", "work"],
+  social: ["social", "cafe", "rescue", "shopping", "travel", "work"],
+  work: ["work", "social", "rescue", "cafe", "travel", "shopping"]
+};
+
+const legacyEnglish = [
+  ["Hi.", "Hello.", "Good morning.", "See you."],
+  ["My name is Xiaobai.", "Nice to meet you.", "Where are you from?", "I am from China."],
+  ["A coffee, please.", "I want water.", "No sugar, please.", "Thank you."],
+  ["Where is the station?", "One ticket, please.", "I need help.", "How much is it?"],
+  ["I like this.", "Do you have black?", "Too expensive.", "I will take it."],
+  ["Sorry.", "I do not understand.", "Please speak slowly.", "Can you say that again?"]
+];
+
+const $ = id => document.getElementById(id);
+const allPhraseRefs = () => scenes.flatMap(scene => scene.lines.map((line, index) => ({ scene, line, index })));
+const phraseRefById = id => allPhraseRefs().find(ref => ref.line.id === id);
+const sceneById = id => scenes.find(scene => scene.id === id);
+
+function localDateKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseLocalDate(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d, 12);
+}
+
+function addDays(key, count) {
+  const date = parseLocalDate(key);
+  date.setDate(date.getDate() + count);
+  return localDateKey(date);
+}
+
+function emptyState() {
+  return {
+    schema: APP_VERSION,
+    profile: null,
+    known: [],
+    learnedAt: {},
+    reviews: {},
+    best: 0,
+    days: [],
+    todayKnown: {},
+    rate: .68,
+    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, activeDates: [] },
+    migrations: []
+  };
+}
+
+function cleanName(value) {
+  return String(value || "").replace(/[<>&"']/g, "").trim().slice(0, 18);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[character]));
+}
+
+function sanitizeState(raw) {
+  const base = emptyState();
+  const merged = Object.assign(base, raw || {});
+  merged.known = Array.isArray(merged.known) ? [...new Set(merged.known.filter(id => phraseRefById(id)))] : [];
+  merged.days = Array.isArray(merged.days) ? [...new Set(merged.days)] : [];
+  const validIds = new Set(allPhraseRefs().map(ref => ref.line.id));
+  merged.learnedAt = Object.fromEntries(Object.entries(merged.learnedAt && typeof merged.learnedAt === "object" ? merged.learnedAt : {}).filter(([id, date]) => validIds.has(id) && /^\d{4}-\d{2}-\d{2}$/.test(date)));
+  merged.reviews = Object.fromEntries(Object.entries(merged.reviews && typeof merged.reviews === "object" ? merged.reviews : {}).filter(([id, review]) => validIds.has(id) && review && /^\d{4}-\d{2}-\d{2}$/.test(review.due || "")).map(([id, review]) => [id, { level: Math.max(0, Math.min(4, Number(review.level) || 0)), due: review.due, successes: Math.max(0, Number(review.successes) || 0), lapses: Math.max(0, Number(review.lapses) || 0), lastMs: Math.max(0, Number(review.lastMs) || 0) }]));
+  merged.todayKnown = Object.fromEntries(Object.entries(merged.todayKnown && typeof merged.todayKnown === "object" ? merged.todayKnown : {}).filter(([date, ids]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(ids)).map(([date, ids]) => [date, [...new Set(ids.filter(id => validIds.has(id)))]]));
+  merged.metrics = Object.assign(emptyState().metrics, merged.metrics || {});
+  merged.metrics.activeDates = Array.isArray(merged.metrics.activeDates) ? [...new Set(merged.metrics.activeDates)] : [];
+  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
+  merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
+  if (merged.profile) {
+    merged.profile.name = cleanName(merged.profile.name) || "Xiaobai";
+    merged.profile.goal = courseOrders[merged.profile.goal] ? merged.profile.goal : "daily";
+    merged.profile.minutes = [3, 5, 10].includes(Number(merged.profile.minutes)) ? Number(merged.profile.minutes) : 5;
+  }
+  merged.known.forEach(id => {
+    if (!merged.learnedAt[id]) merged.learnedAt[id] = localDateKey();
+    if (!merged.reviews[id]) merged.reviews[id] = { level: 0, due: addDays(localDateKey(), 1) };
+  });
+  return merged;
+}
+
+function migrateLegacy() {
+  try {
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
+    if (!legacy) return null;
+    const next = emptyState();
+    next.profile = { name: "小白", goal: "daily", minutes: 5 };
+    next.best = Number(legacy.best || 0);
+    next.rate = Number(legacy.rate || .68);
+    next.migrations.push({ from: "v1", to: APP_VERSION, date: localDateKey() });
+    (legacy.known || []).forEach(oldId => {
+      const [sceneIndex, phraseIndex] = oldId.split("-").map(Number);
+      const oldEnglish = legacyEnglish[sceneIndex]?.[phraseIndex];
+      if (!oldEnglish) return;
+      const normalized = oldEnglish.replace("I am ", "I'm ").replace("I will ", "I'll ");
+      const match = allPhraseRefs().find(ref => ref.line.en === oldEnglish || ref.line.en === normalized || ref.line.en.includes(oldEnglish.replace(/\.$/, "")));
+      if (match && !next.known.includes(match.line.id)) next.known.push(match.line.id);
+    });
+    return sanitizeState(next);
+  } catch { return null; }
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved) return sanitizeState(saved);
+  } catch {}
+  return migrateLegacy() || emptyState();
+}
+
+let state = loadState();
+let currentSceneId = scenes[0].id;
+let currentPhraseIndex = 0;
+let quizItems = [];
+let quizIndex = 0;
+let quizScore = 0;
+let quizLocked = false;
+let reviewedThisQuiz = new Set();
+let selectedWords = [];
+let mediaRecorder = null;
+let mediaStream = null;
+let recordingChunks = [];
+let recordingUrl = null;
+let activeOriginalAudio = null;
+let questionStartedAt = 0;
+let roleSceneId = null;
+let roleIndex = 0;
+let roleRecorder = null;
+let roleStream = null;
+let roleChunks = [];
+let roleUrls = new Map();
+let roleReplaying = false;
+let roleCompletedLogged = false;
+let deferredInstall = null;
+let toastTimer = null;
+
+function saveState(render = true) {
+  state.schema = APP_VERSION;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (render) updateAll();
+}
+
+function displayText(text) {
+  const name = state.profile?.name || "小白";
+  return String(text).replaceAll("{name}", name);
+}
+
+function shuffled(values) {
+  const copy = [...values];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function orderedScenes() {
+  const order = courseOrders[state.profile?.goal || "daily"];
+  return order.map(sceneById);
+}
+
+function completedSceneCount() {
+  return scenes.filter(scene => scene.lines.every(line => state.known.includes(line.id))).length;
+}
+
+function dailyGoal() { return DAILY_TARGETS[state.profile?.minutes || 5] || 5; }
+
+function dueRefs() {
+  const today = localDateKey();
+  return state.known.map(phraseRefById).filter(Boolean).filter(ref => (state.reviews[ref.line.id]?.due || today) <= today);
+}
+
+function nextReviewLabel() {
+  const today = localDateKey();
+  const future = Object.values(state.reviews).map(item => item?.due).filter(date => date && date > today).sort()[0];
+  if (!future) return "—";
+  const diff = Math.round((parseLocalDate(future) - parseLocalDate(today)) / 86400000);
+  return diff === 1 ? "明天" : `${diff}天后`;
+}
+
+function weekStartKey() {
+  const date = new Date();
+  const day = date.getDay() || 7;
+  date.setDate(date.getDate() - day + 1);
+  return localDateKey(date);
+}
+
+function weeklyKnownCount() {
+  const start = weekStartKey();
+  return Object.values(state.learnedAt).filter(date => date >= start && date <= localDateKey()).length;
+}
+
+function streakCount() {
+  const active = new Set(state.days);
+  let date = new Date();
+  let count = 0;
+  for (let i = 0; i < 365; i++) {
+    const key = localDateKey(date);
+    if (active.has(key)) count++;
+    else if (i !== 0) break;
+    date.setDate(date.getDate() - 1);
+  }
+  return count;
+}
+
+function nextPhraseRef() {
+  for (const scene of orderedScenes()) {
+    const index = scene.lines.findIndex(line => !state.known.includes(line.id));
+    if (index >= 0) return { scene, line: scene.lines[index], index };
+  }
+  return dueRefs()[0] || { scene: orderedScenes()[0], line: orderedScenes()[0].lines[0], index: 0 };
+}
+
+function registerLearned(id) {
+  const today = localDateKey();
+  state.todayKnown[today] = state.todayKnown[today] || [];
+  if (!state.todayKnown[today].includes(id)) state.todayKnown[today].push(id);
+  if (!state.days.includes(today)) state.days.push(today);
+  if (!state.metrics.activeDates.includes(today)) state.metrics.activeDates.push(today);
+}
+
+function updateAll() {
+  const today = localDateKey();
+  const todayCount = state.todayKnown[today]?.length || 0;
+  const target = dailyGoal();
+  const due = dueRefs().length;
+  const weekCount = weeklyKnownCount();
+  const next = nextPhraseRef();
+  const nextIncompleteScene = orderedScenes().find(scene => !scene.lines.every(line => state.known.includes(line.id))) || orderedScenes()[0];
+
+  $("streakCount").textContent = streakCount();
+  $("minutesLabel").textContent = `${state.profile?.minutes || 5} MIN`;
+  $("missionNumber").textContent = String(state.known.length + 1).padStart(2, "0");
+  $("heroEnglish").textContent = displayText(next.line.en);
+  $("heroChinese").textContent = displayText(next.line.zh);
+  $("continueBtn").dataset.scene = next.scene.id;
+  $("continueBtn").dataset.phrase = next.index;
+  $("continueBtn").textContent = state.known.length ? "继续今天的表达 →" : "开始今天的表达 →";
+  $("dailyGoalLabel").textContent = `目标 ${target} 句`;
+  $("todayProgressText").textContent = `${Math.min(todayCount, target)} / ${target}`;
+  $("todayProgressFill").style.width = `${Math.min(todayCount / target * 100, 100)}%`;
+  $("dueCount").textContent = due;
+  $("weekKnown").textContent = weekCount;
+  $("quizBest").textContent = state.best ? `${state.best}/5` : "—";
+  renderWeekDots(weekCount);
+  $("weeklyCopy").textContent = weekCount >= 12 ? "本周目标完成。把其中一句真正用出去。" : `再拿下 ${12 - weekCount} 句，形成本周表达库存。`;
+  $("nextSceneNumber").textContent = String(orderedScenes().indexOf(nextIncompleteScene) + 1).padStart(2, "0");
+  $("nextSceneTitle").textContent = nextIncompleteScene.title;
+  $("nextSceneDesc").textContent = nextIncompleteScene.desc;
+  $("nextSceneBtn").dataset.scene = nextIncompleteScene.id;
+
+  $("reviewDueLarge").textContent = due;
+  $("reviewKnownLarge").textContent = state.known.length;
+  $("reviewNextLarge").textContent = nextReviewLabel();
+  $("profileKnown").textContent = state.known.length;
+  $("profileDone").textContent = completedSceneCount();
+  $("profileReview").textContent = state.metrics.reviewAnswers;
+  $("profileRecordings").textContent = state.metrics.recordings;
+  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
+
+  if (state.profile) {
+    $("profileName").value = state.profile.name;
+    $("goalSelect").value = state.profile.goal;
+    $("minutesSelect").value = String(state.profile.minutes);
+  }
+  $("rateSelect").value = String(state.rate || .68);
+  renderLessonList();
+}
+
+function renderWeekDots(count) {
+  $("weekDots").innerHTML = Array.from({ length: 12 }, (_, index) => `<span class="week-dot ${index < count ? "filled" : ""}" aria-hidden="true"></span>`).join("");
+  $("weekDots").setAttribute("aria-label", `本周已拿下 ${count} 句，目标 12 句`);
+}
+
+function showView(name) {
+  cleanupRecording();
+  document.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
+  $(`${name}View`).classList.add("active");
+  document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === name));
+  if (name === "lessons" && $("lessonShell").hidden) showLessonIndex();
+  if (name === "practice") updateAll();
+  window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+
+function renderLessonList() {
+  $("lessonList").innerHTML = orderedScenes().map((scene, orderIndex) => {
+    const learned = scene.lines.filter(line => state.known.includes(line.id)).length;
+    const done = learned === scene.lines.length;
+    return `<button class="lesson-card ${done ? "done" : ""}" type="button" data-scene="${scene.id}"><span class="lesson-icon">${done ? "✓" : String(orderIndex + 1).padStart(2, "0")}</span><span><h3>${scene.title}</h3><p>${scene.desc} · ${learned}/${scene.lines.length} 句</p></span><span class="lesson-status">${done ? "✓" : "›"}</span></button>`;
+  }).join("");
+  $("lessonList").querySelectorAll(".lesson-card").forEach(button => button.addEventListener("click", () => openScene(button.dataset.scene, 0)));
+}
+
+function showLessonIndex() {
+  cleanupRecording();
+  $("lessonIndex").hidden = false;
+  $("lessonShell").hidden = true;
+  renderLessonList();
+}
+
+function openScene(sceneId, phraseIndex = 0) {
+  currentSceneId = sceneId;
+  currentPhraseIndex = Math.max(0, Math.min(Number(phraseIndex), sceneById(sceneId).lines.length - 1));
+  showView("lessons");
+  $("lessonIndex").hidden = true;
+  $("lessonShell").hidden = false;
+  renderPhrase();
+}
+
+function renderPhrase() {
+  cleanupRecording();
+  const scene = sceneById(currentSceneId);
+  const line = scene.lines[currentPhraseIndex];
+  $("lessonNumber").textContent = `SCENE ${String(orderedScenes().indexOf(scene) + 1).padStart(2, "0")}`;
+  $("lessonName").textContent = scene.title;
+  $("lessonStep").textContent = `${currentPhraseIndex + 1} / ${scene.lines.length}`;
+  $("lessonContext").textContent = scene.context;
+  $("speakerBadge").textContent = line.speaker;
+  $("phraseIndex").textContent = `LINE ${String(currentPhraseIndex + 1).padStart(2, "0")}`;
+  $("phraseEnglish").textContent = displayText(line.en);
+  $("phraseChinese").textContent = displayText(line.zh);
+  $("phrasePronounce").textContent = `近似音：${displayText(line.pron)}`;
+  $("phraseRhythm").innerHTML = line.rhythm.map(part => `<span class="${/[A-Z]{2}/.test(part) ? "stress" : ""}">${escapeHtml(displayText(part))}</span>`).join("");
+  $("phraseWhen").textContent = line.when;
+  $("phraseMission").textContent = line.mission;
+  $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
+  $("knownBtn").textContent = state.known.includes(line.id) ? "已拿下 · 下一句 →" : "拿下这句 · 下一句 →";
+  $("pronunciationDetails").open = false;
+  renderTranscript(scene);
+}
+
+function renderTranscript(scene) {
+  $("dialogueTranscript").innerHTML = scene.lines.map((line, index) => `<button class="dialogue-line ${index === currentPhraseIndex ? "active" : ""}" type="button" data-index="${index}"><span>${line.speaker}</span><span><strong lang="en">${escapeHtml(displayText(line.en))}</strong><small>${escapeHtml(displayText(line.zh))}</small></span></button>`).join("");
+  $("dialogueTranscript").querySelectorAll(".dialogue-line").forEach(button => button.addEventListener("click", () => { currentPhraseIndex = Number(button.dataset.index); renderPhrase(); }));
+}
+
+function selectVoice() {
+  const voices = speechSynthesis.getVoices();
+  return voices.find(voice => /^en(-|_)/i.test(voice.lang) && /Samantha|Google US English|Daniel|Ava/i.test(voice.name)) || voices.find(voice => /^en(-|_)/i.test(voice.lang)) || null;
+}
+
+function bundledAudioPath(line) {
+  return ["social-1", "work-1"].includes(line.id) ? null : `audio/${line.id}.m4a`;
+}
+
+function speakTextPromise(text, rate = .78) {
+  return new Promise(resolve => {
+    if (!("speechSynthesis" in window)) { resolve(); return; }
+    let settled = false;
+    const finish = () => { if (settled) return; settled = true; clearTimeout(timer); resolve(); };
+    const timer = setTimeout(finish, Math.max(3500, String(text).length * 180));
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(displayText(text));
+    utterance.lang = "en-US";
+    utterance.rate = rate;
+    utterance.voice = selectVoice();
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    speechSynthesis.speak(utterance);
+  });
+}
+
+function playAudioUrl(url, rate = 1) {
+  return new Promise(resolve => {
+    const audio = new Audio(url);
+    activeOriginalAudio?.pause();
+    activeOriginalAudio = audio;
+    audio.playbackRate = rate;
+    const finish = () => { if (activeOriginalAudio === audio) activeOriginalAudio = null; resolve(); };
+    audio.onended = finish;
+    audio.onerror = finish;
+    audio.play().catch(finish);
+  });
+}
+
+async function playOriginal(ref, rate = 1, countMetric = false) {
+  const path = bundledAudioPath(ref.line);
+  if (path) await playAudioUrl(path, rate);
+  else await speakTextPromise(ref.line.en, rate < .8 ? .62 : .9);
+  if (countMetric) {
+    state.metrics.audioPlays++;
+    saveState(false);
+  }
+}
+
+function speakCurrent(rate) {
+  const scene = sceneById(currentSceneId);
+  const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
+  playOriginal(ref, rate, true);
+}
+
+function speakText(text, rate = .78) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(displayText(text));
+  utterance.lang = "en-US";
+  utterance.rate = rate;
+  utterance.voice = selectVoice();
+  speechSynthesis.speak(utterance);
+}
+
+async function toggleRecording() {
+  if (mediaRecorder?.state === "recording") { mediaRecorder.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !("MediaRecorder" in window)) {
+    toast("当前浏览器不支持本地录音，请用新版 Safari 或 Chrome。");
+    return;
+  }
+  try {
+    cleanupRecording();
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recordingChunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable = event => { if (event.data.size) recordingChunks.push(event.data); };
+    mediaRecorder.onstop = finishRecording;
+    mediaRecorder.start();
+    $("recordBtn").classList.add("recording");
+    $("recordBtn").textContent = "■ 停止录音";
+    $("recordStatus").textContent = "正在录音…";
+  } catch (error) {
+    $("recordStatus").textContent = "没有获得麦克风权限";
+    toast("需要允许麦克风，录音才会开始；声音不会上传。");
+  }
+}
+
+function finishRecording() {
+  const mime = mediaRecorder?.mimeType || "audio/webm";
+  const blob = new Blob(recordingChunks, { type: mime });
+  if (recordingUrl) URL.revokeObjectURL(recordingUrl);
+  recordingUrl = URL.createObjectURL(blob);
+  $("recordingPlayback").src = recordingUrl;
+  $("recordingPlayback").hidden = false;
+  $("recordBtn").classList.remove("recording");
+  $("recordBtn").textContent = "● 重新录一遍";
+  $("recordStatus").textContent = "已完成，可以对比示范";
+  $("compareBtn").hidden = false;
+  $("recordingGrade").hidden = false;
+  mediaStream?.getTracks().forEach(track => track.stop());
+  mediaStream = null;
+  mediaRecorder = null;
+  state.metrics.recordings++;
+  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  saveState();
+}
+
+function cleanupRecording() {
+  if (mediaRecorder?.state === "recording") {
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+    mediaRecorder.stop();
+  }
+  mediaStream?.getTracks().forEach(track => track.stop());
+  mediaStream = null;
+  mediaRecorder = null;
+  recordingChunks = [];
+  if (recordingUrl) URL.revokeObjectURL(recordingUrl);
+  recordingUrl = null;
+  if ($("recordingPlayback")) {
+    $("recordingPlayback").pause();
+    $("recordingPlayback").removeAttribute("src");
+    $("recordingPlayback").hidden = true;
+    $("recordBtn").classList.remove("recording");
+    $("recordBtn").textContent = "● 开始录音";
+    $("recordStatus").textContent = "等待跟读";
+    $("compareBtn").hidden = true;
+    $("recordingGrade").hidden = true;
+    $("recognitionResult").textContent = "识别不是发音评分；部分浏览器可能使用系统在线语音服务。";
+  }
+}
+
+function playElementOnce(element) {
+  return new Promise(resolve => {
+    element.currentTime = 0;
+    element.onended = resolve;
+    element.onerror = resolve;
+    element.play().catch(resolve);
+  });
+}
+
+async function compareRecording() {
+  if (!recordingUrl) return;
+  $("compareBtn").disabled = true;
+  $("recordStatus").textContent = "示范…";
+  const scene = sceneById(currentSceneId);
+  const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
+  await playOriginal(ref, 1);
+  $("recordStatus").textContent = "我的录音…";
+  await playElementOnce($("recordingPlayback"));
+  $("recordStatus").textContent = "再听示范…";
+  await playOriginal(ref, 1);
+  $("recordStatus").textContent = "对比完成，自己判断是否更接近。";
+  $("compareBtn").disabled = false;
+  state.metrics.comparisons++;
+  saveState();
+}
+
+function gradeRecording(value) {
+  const line = sceneById(currentSceneId).lines[currentPhraseIndex];
+  if (state.known.includes(line.id)) {
+    const review = state.reviews[line.id] || { level: 0, due: addDays(localDateKey(), 1) };
+    if (value === "again") review.due = addDays(localDateKey(), 1);
+    review.selfGrade = value;
+    state.reviews[line.id] = review;
+    saveState();
+  }
+  toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "很好，保留自己的判断，不使用虚假分数。");
+}
+
+function startSpeechRecognition() {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    $("recognitionResult").textContent = "当前浏览器不支持语音识别；录音和回放仍可正常使用。";
+    return;
+  }
+  const recognition = new Recognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  $("recognitionResult").textContent = "正在听…请说当前英文句子。";
+  recognition.onresult = event => {
+    const result = event.results[0][0].transcript;
+    $("recognitionResult").textContent = `浏览器听到：${result}。这只是识别结果，不是发音分数。`;
+    state.metrics.recognitions++;
+    saveState(false);
+  };
+  recognition.onerror = event => {
+    $("recognitionResult").textContent = event.error === "not-allowed" ? "没有获得麦克风权限，识别未开始。" : "这次没有识别清楚，可以继续使用录音回放。";
+  };
+  recognition.start();
+}
+
+function markCurrentKnown() {
+  const scene = sceneById(currentSceneId);
+  const line = scene.lines[currentPhraseIndex];
+  if (!state.known.includes(line.id)) {
+    state.known.push(line.id);
+    state.learnedAt[line.id] = localDateKey();
+    state.reviews[line.id] = { level: 0, due: addDays(localDateKey(), 1) };
+    registerLearned(line.id);
+    saveState();
+    toast("已进入表达库存。明天会第一次复习。");
+  }
+  if (currentPhraseIndex < scene.lines.length - 1) {
+    currentPhraseIndex++;
+    renderPhrase();
+  } else {
+    toast("这个真实场景已经走完。找机会用出一句。");
+    showLessonIndex();
+  }
+}
+
+function openRoleplay() {
+  cleanupRecording();
+  cleanupRoleplay(false);
+  roleSceneId = currentSceneId;
+  roleIndex = 0;
+  roleUrls = new Map();
+  roleCompletedLogged = false;
+  $("roleplayOverlay").hidden = false;
+  $("app").inert = true;
+  $("app").setAttribute("aria-hidden", "true");
+  document.body.classList.add("modal-open");
+  $("roleplayStage").hidden = false;
+  $("roleplayEnd").hidden = true;
+  renderRoleplayLine(true);
+}
+
+function renderRoleplayLine(autoPlayPartner = false) {
+  const scene = sceneById(roleSceneId);
+  if (roleIndex >= scene.lines.length) { finishRoleplay(); return; }
+  const line = scene.lines[roleIndex];
+  const userTurn = line.speaker === "YOU";
+  $("roleplayFill").style.width = `${roleIndex / scene.lines.length * 100}%`;
+  $("roleSpeaker").textContent = line.speaker;
+  $("roleplayTitle").textContent = scene.title;
+  $("roleCue").textContent = userTurn ? "轮到你回答。先自己说，需要时再看英文提示。" : "先听对方说什么，再继续。";
+  $("roleEnglish").textContent = displayText(line.en);
+  $("roleEnglish").classList.toggle("concealed", userTurn);
+  $("roleChinese").textContent = displayText(line.zh);
+  $("rolePlayBtn").hidden = false;
+  $("rolePlayBtn").textContent = userTurn ? "▶ 听示范" : "▶ 播放对方";
+  $("roleHintBtn").hidden = !userTurn;
+  $("roleRecordBtn").hidden = !userTurn;
+  $("roleRecordBtn").classList.remove("recording");
+  $("roleRecordBtn").textContent = roleUrls.has(line.id) ? "● 重新录回答" : "● 录下我的回答";
+  $("rolePlayback").hidden = true;
+  $("rolePlayback").removeAttribute("src");
+  $("roleStatus").textContent = userTurn ? "录下回答后继续；也可以连续点两次“继续”跳过。" : "";
+  $("roleNextBtn").textContent = userTurn ? "完成我的回答 →" : "我听懂了，继续 →";
+  $("roleNextBtn").dataset.skipConfirmed = "false";
+  if (autoPlayPartner && !userTurn) playRoleOriginal();
+}
+
+function revealRoleHint() {
+  $("roleEnglish").classList.remove("concealed");
+  $("roleHintBtn").hidden = true;
+}
+
+function playRoleOriginal() {
+  const scene = sceneById(roleSceneId);
+  const ref = { scene, line: scene.lines[roleIndex], index: roleIndex };
+  $("roleStatus").textContent = "正在播放示范…";
+  playOriginal(ref, 1).then(() => { if (!$("roleplayOverlay").hidden) $("roleStatus").textContent = "播放完成。"; });
+}
+
+async function toggleRoleRecording() {
+  if (roleRecorder?.state === "recording") { roleRecorder.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !("MediaRecorder" in window)) {
+    $("roleStatus").textContent = "当前浏览器不支持本地录音，可以继续完成对话。";
+    return;
+  }
+  try {
+    roleStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    roleChunks = [];
+    roleRecorder = new MediaRecorder(roleStream);
+    roleRecorder.ondataavailable = event => { if (event.data.size) roleChunks.push(event.data); };
+    roleRecorder.onstop = finishRoleRecording;
+    roleRecorder.start();
+    $("roleRecordBtn").classList.add("recording");
+    $("roleRecordBtn").textContent = "■ 停止录音";
+    $("roleStatus").textContent = "正在录下你的回答…";
+  } catch {
+    $("roleStatus").textContent = "没有获得麦克风权限；录音不会上传，可以跳过继续。";
+  }
+}
+
+function finishRoleRecording() {
+  const scene = sceneById(roleSceneId);
+  const line = scene.lines[roleIndex];
+  const blob = new Blob(roleChunks, { type: roleRecorder?.mimeType || "audio/webm" });
+  const previous = roleUrls.get(line.id);
+  if (previous) URL.revokeObjectURL(previous);
+  const url = URL.createObjectURL(blob);
+  roleUrls.set(line.id, url);
+  $("rolePlayback").src = url;
+  $("rolePlayback").hidden = false;
+  $("roleRecordBtn").classList.remove("recording");
+  $("roleRecordBtn").textContent = "● 重新录回答";
+  $("roleStatus").textContent = "回答已放进这段对话。";
+  roleStream?.getTracks().forEach(track => track.stop());
+  roleStream = null;
+  roleRecorder = null;
+  state.metrics.recordings++;
+  saveState();
+}
+
+function nextRoleplayLine() {
+  const scene = sceneById(roleSceneId);
+  const line = scene.lines[roleIndex];
+  if (line.speaker === "YOU" && !roleUrls.has(line.id) && $("roleNextBtn").dataset.skipConfirmed !== "true") {
+    $("roleNextBtn").dataset.skipConfirmed = "true";
+    $("roleStatus").textContent = "还没有录音。再点一次继续可跳过这句。";
+    return;
+  }
+  roleIndex++;
+  renderRoleplayLine(true);
+}
+
+function finishRoleplay() {
+  $("roleplayFill").style.width = "100%";
+  $("roleplayStage").hidden = true;
+  $("roleplayEnd").hidden = false;
+  if (!roleCompletedLogged) {
+    state.metrics.roleplays++;
+    if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+    roleCompletedLogged = true;
+    saveState();
+  }
+}
+
+async function replayRoleplay() {
+  if (roleReplaying) return;
+  roleReplaying = true;
+  $("roleReplayAll").disabled = true;
+  const scene = sceneById(roleSceneId);
+  for (let index = 0; index < scene.lines.length && roleReplaying; index++) {
+    const line = scene.lines[index];
+    $("roleReplayStatus").textContent = `${index + 1}/${scene.lines.length} · ${line.speaker}：${displayText(line.zh)}`;
+    const userRecording = line.speaker === "YOU" ? roleUrls.get(line.id) : null;
+    if (userRecording) await playAudioUrl(userRecording, 1);
+    else await playOriginal({ scene, line, index }, 1);
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  if (roleReplaying) $("roleReplayStatus").textContent = "整段回放完成。";
+  roleReplaying = false;
+  $("roleReplayAll").disabled = false;
+}
+
+function restartRoleplay() {
+  roleReplaying = false;
+  roleIndex = 0;
+  $("roleplayStage").hidden = false;
+  $("roleplayEnd").hidden = true;
+  renderRoleplayLine(true);
+}
+
+function cleanupRoleplay(closeOverlay = true) {
+  roleReplaying = false;
+  if (roleRecorder?.state === "recording") {
+    roleRecorder.ondataavailable = null;
+    roleRecorder.onstop = null;
+    roleRecorder.stop();
+  }
+  roleStream?.getTracks().forEach(track => track.stop());
+  roleStream = null;
+  roleRecorder = null;
+  roleChunks = [];
+  roleUrls.forEach(url => URL.revokeObjectURL(url));
+  roleUrls.clear();
+  if (activeOriginalAudio) {
+    const audio = activeOriginalAudio;
+    activeOriginalAudio = null;
+    audio.pause();
+    const finish = audio.onended;
+    audio.onended = null;
+    if (typeof finish === "function") finish();
+  }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (closeOverlay && $("roleplayOverlay")) {
+    $("roleplayOverlay").hidden = true;
+    $("app").inert = false;
+    $("app").removeAttribute("aria-hidden");
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function quizPool() {
+  const due = shuffled(dueRefs());
+  const known = shuffled(state.known.map(phraseRefById).filter(Boolean));
+  const unique = [];
+  [...due, ...known].forEach(ref => { if (!unique.some(item => item.line.id === ref.line.id)) unique.push(ref); });
+  if (!unique.length) return [];
+  const result = [...unique];
+  while (result.length < 5) result.push(unique[result.length % unique.length]);
+  return result.slice(0, 5);
+}
+
+function startQuiz() {
+  quizItems = quizPool();
+  if (!quizItems.length) {
+    toast("先拿下一句，再回来复习。");
+    const next = nextPhraseRef();
+    openScene(next.scene.id, next.index);
+    return;
+  }
+  quizIndex = 0;
+  quizScore = 0;
+  quizLocked = false;
+  reviewedThisQuiz = new Set();
+  $("quizStart").hidden = true;
+  $("resultBox").hidden = true;
+  $("quizBox").hidden = false;
+  renderQuizQuestion();
+}
+
+function quizModeFor(ref, index) {
+  const modes = ["translation", "listening", "ordering", "recall", "translation"];
+  const words = cleanWords(displayText(ref.line.en));
+  return modes[index] === "ordering" && words.length < 2 ? "translation" : modes[index];
+}
+
+function cleanWords(text) { return text.replace(/[.,?!]/g, "").split(/\s+/).filter(Boolean); }
+
+function renderQuizQuestion() {
+  quizLocked = false;
+  selectedWords = [];
+  questionStartedAt = performance.now();
+  const ref = quizItems[quizIndex];
+  const mode = quizModeFor(ref, quizIndex);
+  const modeNames = { translation: "看中文 · 选英文", listening: "听示范 · 选意思", ordering: "重组句子", recall: "主动回忆" };
+  $("quizMode").textContent = modeNames[mode];
+  $("quizStep").textContent = `${quizIndex + 1} / 5`;
+  $("quizProgress").style.width = `${quizIndex / 5 * 100}%`;
+  $("quizFeedback").textContent = "";
+  $("quizPrompt").innerHTML = "";
+  $("quizInteraction").innerHTML = "";
+  if (mode === "translation") renderTranslationQuestion(ref);
+  if (mode === "listening") renderListeningQuestion(ref);
+  if (mode === "ordering") renderOrderingQuestion(ref);
+  if (mode === "recall") renderRecallQuestion(ref);
+}
+
+function alternativeRefs(target, key) {
+  const seen = new Set([displayText(target.line[key])]);
+  return shuffled(allPhraseRefs()).filter(ref => {
+    const value = displayText(ref.line[key]);
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  }).slice(0, 2);
+}
+
+function renderTranslationQuestion(ref) {
+  $("quizPrompt").innerHTML = `<div><small>下面中文怎么说？</small><strong>${escapeHtml(displayText(ref.line.zh))}</strong></div>`;
+  const options = shuffled([ref, ...alternativeRefs(ref, "en")]);
+  $("quizInteraction").innerHTML = options.map(option => `<button class="choice" type="button" data-correct="${option.line.id === ref.line.id}">${escapeHtml(displayText(option.line.en))}</button>`).join("");
+  $("quizInteraction").querySelectorAll(".choice").forEach(button => button.addEventListener("click", () => gradeChoice(button, button.dataset.correct === "true", ref, displayText(ref.line.en))));
+}
+
+function renderListeningQuestion(ref) {
+  $("quizPrompt").innerHTML = `<div><small>听英文，选出对应意思</small><button class="button listen-main" id="quizListen" type="button">▶ 播放英文</button></div>`;
+  const options = shuffled([ref, ...alternativeRefs(ref, "zh")]);
+  $("quizInteraction").innerHTML = options.map(option => `<button class="choice" type="button" data-correct="${option.line.id === ref.line.id}">${escapeHtml(displayText(option.line.zh))}</button>`).join("");
+  $("quizListen").addEventListener("click", () => speakText(ref.line.en, .7));
+  $("quizInteraction").querySelectorAll(".choice").forEach(button => button.addEventListener("click", () => gradeChoice(button, button.dataset.correct === "true", ref, displayText(ref.line.zh))));
+  setTimeout(() => speakText(ref.line.en, .7), 200);
+}
+
+function gradeChoice(button, correct, ref, correctText) {
+  if (quizLocked) return;
+  quizLocked = true;
+  $("quizInteraction").querySelectorAll(".choice").forEach(choice => {
+    choice.disabled = true;
+    if (choice.textContent === correctText) choice.classList.add("correct");
+  });
+  if (!correct) button.classList.add("wrong");
+  finishQuizAnswer(correct, ref, correct ? "记住了。" : `正确答案：${correctText}`);
+}
+
+function renderOrderingQuestion(ref) {
+  const words = cleanWords(displayText(ref.line.en));
+  $("quizPrompt").innerHTML = `<div><small>按顺序拼出这句话</small><strong>${escapeHtml(displayText(ref.line.zh))}</strong></div>`;
+  $("quizInteraction").innerHTML = `<div class="answer-bank" id="answerBank" aria-label="已选择单词"></div><div class="word-bank" id="wordBank" aria-label="待选择单词"></div><button class="button primary full" id="checkOrder" type="button">检查顺序</button>`;
+  const shuffledWords = shuffled(words.map((word, index) => ({ word, key: `${index}-${word}` })));
+  const available = [...shuffledWords];
+  function draw() {
+    $("answerBank").innerHTML = selectedWords.map(item => `<button class="word-chip" type="button" data-key="${escapeHtml(item.key)}">${escapeHtml(item.word)}</button>`).join("");
+    $("wordBank").innerHTML = available.filter(item => !selectedWords.some(selected => selected.key === item.key)).map(item => `<button class="word-chip" type="button" data-key="${escapeHtml(item.key)}">${escapeHtml(item.word)}</button>`).join("");
+    $("answerBank").querySelectorAll(".word-chip").forEach(button => button.addEventListener("click", () => { selectedWords = selectedWords.filter(item => item.key !== button.dataset.key); draw(); }));
+    $("wordBank").querySelectorAll(".word-chip").forEach(button => button.addEventListener("click", () => { const item = available.find(value => value.key === button.dataset.key); selectedWords.push(item); draw(); }));
+  }
+  draw();
+  $("checkOrder").addEventListener("click", () => {
+    if (quizLocked) return;
+    if (selectedWords.length !== words.length) { $("quizFeedback").textContent = "先把所有单词放进去。"; return; }
+    quizLocked = true;
+    const correct = selectedWords.map(item => item.word.toLowerCase()).join(" ") === words.map(word => word.toLowerCase()).join(" ");
+    finishQuizAnswer(correct, ref, correct ? "顺序正确。" : `正确顺序：${words.join(" ")}`);
+  });
+}
+
+function renderRecallQuestion(ref) {
+  $("quizPrompt").innerHTML = `<div><small>先在心里或大声说出来</small><strong>${escapeHtml(displayText(ref.line.zh))}</strong></div>`;
+  $("quizInteraction").innerHTML = `<button class="button light full" id="revealAnswer" type="button">想好后，显示答案</button>`;
+  $("revealAnswer").addEventListener("click", () => {
+    $("quizInteraction").innerHTML = `<div class="recall-answer"><strong lang="en">${escapeHtml(displayText(ref.line.en))}</strong><span>${escapeHtml(displayText(ref.line.zh))}</span></div><div class="self-grade"><button class="button light" type="button" data-grade="false">还不熟</button><button class="button acid-button" type="button" data-grade="true">我记得</button></div>`;
+    $("quizInteraction").querySelectorAll("[data-grade]").forEach(button => button.addEventListener("click", () => {
+      if (quizLocked) return;
+      quizLocked = true;
+      const correct = button.dataset.grade === "true";
+      finishQuizAnswer(correct, ref, correct ? "主动想起来了。" : "没关系，明天会更早再见到它。", 500);
+    }));
+  });
+}
+
+function scheduleReview(ref, correct, elapsedMs) {
+  if (!state.known.includes(ref.line.id) || reviewedThisQuiz.has(ref.line.id)) return;
+  reviewedThisQuiz.add(ref.line.id);
+  const current = state.reviews[ref.line.id] || { level: 0, due: localDateKey(), successes: 0, lapses: 0 };
+  const fastEnough = elapsedMs <= 9000;
+  const level = correct ? Math.min(current.level + (fastEnough ? 1 : 0), REVIEW_INTERVALS.length - 1) : 0;
+  state.reviews[ref.line.id] = {
+    level,
+    due: addDays(localDateKey(), REVIEW_INTERVALS[level]),
+    successes: (current.successes || 0) + (correct ? 1 : 0),
+    lapses: (current.lapses || 0) + (correct ? 0 : 1),
+    lastMs: Math.round(elapsedMs)
+  };
+}
+
+function finishQuizAnswer(correct, ref, message, delay = 1100) {
+  if (correct) quizScore++;
+  scheduleReview(ref, correct, performance.now() - questionStartedAt);
+  state.metrics.reviewAnswers++;
+  $("quizFeedback").textContent = message;
+  saveState(false);
+  setTimeout(() => {
+    quizIndex++;
+    if (quizIndex < 5) renderQuizQuestion();
+    else finishQuiz();
+  }, delay);
+}
+
+function finishQuiz() {
+  $("quizBox").hidden = true;
+  $("resultBox").hidden = false;
+  $("resultScore").textContent = `${quizScore}/5`;
+  $("resultMessage").textContent = quizScore === 5 ? "状态拉满。现在选一句，今天真的用出去。" : quizScore >= 3 ? "记忆正在变稳。答错的表达会更早回来。" : "不需要硬背；跟读一遍，明天再见。";
+  state.best = Math.max(state.best || 0, quizScore);
+  state.metrics.quizzes++;
+  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  saveState();
+}
+
+function exportProgress() {
+  const payload = { app: "小白英语", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `小白英语进度-${localDateKey()}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+  toast("进度文件已经导出。");
+}
+
+function importProgress(file) {
+  if (!file || file.size > 1024 * 1024) {
+    toast("进度文件不能超过 1MB。");
+    $("importFile").value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      const incoming = parsed.state || parsed;
+      if (!incoming || typeof incoming !== "object" || !Array.isArray(incoming.known) || incoming.known.length > 100 || (incoming.profile && typeof incoming.profile !== "object")) throw new Error("invalid");
+      state = sanitizeState(incoming);
+      state.migrations.push({ from: String(parsed.version || incoming.schema || "unknown"), to: APP_VERSION, date: localDateKey() });
+      saveState();
+      showView("home");
+      toast("进度已经恢复。");
+    } catch { toast("这个文件不是有效的小白英语进度。"); }
+    $("importFile").value = "";
+  };
+  reader.readAsText(file);
+}
+
+function calendarDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const h = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${y}${m}${d}T${h}${min}00`;
+}
+
+function createCalendarReminder() {
+  const start = new Date();
+  start.setDate(start.getDate() + 1);
+  start.setHours(9, 0, 0, 0);
+  const duration = state.profile?.minutes || 5;
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Xiaobai English//Daily Practice//ZH",
+    "BEGIN:VEVENT",
+    `UID:xiaobai-english-${Date.now()}@local`,
+    `DTSTART:${calendarDate(start)}`,
+    "RRULE:FREQ=DAILY",
+    `DURATION:PT${duration}M`,
+    "SUMMARY:小白英语｜今天开口一句",
+    `DESCRIPTION:用 ${duration} 分钟完成一句真实英语表达。无需连续完美，只要今天开口。`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "小白英语每日提醒.ics";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+  toast("日历提醒文件已生成，打开后确认添加即可。");
+}
+
+function showToastInstallHelp() {
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  $("installTip").hidden = false;
+  $("installTip").textContent = isiOS ? "iPhone：点 Safari 底部的分享按钮，再选择“添加到主屏幕”。" : "Android：打开浏览器右上角菜单，选择“添加到主屏幕”或“安装应用”。";
+}
+
+function toast(message) {
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
+}
+
+function setupOnboarding() {
+  if (state.profile) return;
+  $("onboarding").hidden = false;
+  $("app").inert = true;
+  $("app").setAttribute("aria-hidden", "true");
+  document.body.classList.add("modal-open");
+}
+
+function selectExclusive(container, button, selector) {
+  container.querySelectorAll(selector).forEach(item => {
+    const selected = item === button;
+    item.classList.toggle("selected", selected);
+    item.setAttribute("aria-pressed", String(selected));
+  });
+}
+
+function finishOnboarding() {
+  const goal = $("onboardingGoals").querySelector(".selected").dataset.goal;
+  const minutes = Number($("onboardingTimes").querySelector(".selected").dataset.minutes);
+  const name = cleanName($("onboardingName").value) || "Xiaobai";
+  state.profile = { name, goal, minutes };
+  $("onboarding").hidden = true;
+  $("app").inert = false;
+  $("app").removeAttribute("aria-hidden");
+  document.body.classList.remove("modal-open");
+  saveState();
+  toast(`${name}，先从今天最能用的一句开始。`);
+}
+
+function saveSettings() {
+  state.profile = state.profile || { name: "小白", goal: "daily", minutes: 5 };
+  state.profile.name = cleanName($("profileName").value) || "Xiaobai";
+  state.profile.goal = $("goalSelect").value;
+  state.profile.minutes = Number($("minutesSelect").value);
+  state.rate = Number($("rateSelect").value);
+  saveState();
+  toast("学习节奏已更新。");
+}
+
+function bindEvents() {
+  document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => showView(button.dataset.view)));
+  document.querySelectorAll("[data-go]").forEach(button => button.addEventListener("click", () => showView(button.dataset.go)));
+  $("continueBtn").addEventListener("click", event => openScene(event.currentTarget.dataset.scene, event.currentTarget.dataset.phrase));
+  $("nextSceneBtn").addEventListener("click", event => openScene(event.currentTarget.dataset.scene, 0));
+  $("backToLessons").addEventListener("click", showLessonIndex);
+  $("prevPhrase").addEventListener("click", () => { if (currentPhraseIndex > 0) { currentPhraseIndex--; renderPhrase(); } else showLessonIndex(); });
+  $("knownBtn").addEventListener("click", markCurrentKnown);
+  $("slowSoundBtn").addEventListener("click", () => speakCurrent(.72));
+  $("normalSoundBtn").addEventListener("click", () => speakCurrent(1));
+  $("recordBtn").addEventListener("click", toggleRecording);
+  $("compareBtn").addEventListener("click", compareRecording);
+  document.querySelectorAll("[data-record-grade]").forEach(button => button.addEventListener("click", () => gradeRecording(button.dataset.recordGrade)));
+  $("recognizeBtn").addEventListener("click", startSpeechRecognition);
+  $("startRoleplay").addEventListener("click", openRoleplay);
+  $("closeRoleplay").addEventListener("click", () => cleanupRoleplay(true));
+  $("roleFinish").addEventListener("click", () => cleanupRoleplay(true));
+  $("rolePlayBtn").addEventListener("click", playRoleOriginal);
+  $("roleHintBtn").addEventListener("click", revealRoleHint);
+  $("roleRecordBtn").addEventListener("click", toggleRoleRecording);
+  $("roleNextBtn").addEventListener("click", nextRoleplayLine);
+  $("roleReplayAll").addEventListener("click", replayRoleplay);
+  $("roleRestart").addEventListener("click", restartRoleplay);
+  $("startQuiz").addEventListener("click", startQuiz);
+  $("retryQuiz").addEventListener("click", startQuiz);
+  $("saveSettings").addEventListener("click", saveSettings);
+  $("rateSelect").addEventListener("change", () => speakText("Hello. Nice to meet you.", Number($("rateSelect").value)));
+  $("exportBtn").addEventListener("click", exportProgress);
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", event => { if (event.target.files[0]) importProgress(event.target.files[0]); });
+  $("calendarBtn").addEventListener("click", createCalendarReminder);
+  $("resetBtn").addEventListener("click", () => {
+    if (!confirm("确定清空全部学习记录吗？建议先导出一份备份。")) return;
+    state = emptyState();
+    localStorage.removeItem(STORAGE_KEY);
+    saveState();
+    $("onboarding").hidden = false;
+    $("app").inert = true;
+    $("app").setAttribute("aria-hidden", "true");
+    document.body.classList.add("modal-open");
+    showView("home");
+  });
+  $("installBtn").addEventListener("click", async () => {
+    if (!deferredInstall) { showToastInstallHelp(); return; }
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall = null;
+  });
+  $("onboardingGoals").querySelectorAll("[data-goal]").forEach(button => button.addEventListener("click", () => selectExclusive($("onboardingGoals"), button, "[data-goal]")));
+  $("onboardingTimes").querySelectorAll("[data-minutes]").forEach(button => button.addEventListener("click", () => selectExclusive($("onboardingTimes"), button, "[data-minutes]")));
+  $("finishOnboarding").addEventListener("click", finishOnboarding);
+  $("reloadUpdate").addEventListener("click", () => location.reload());
+  window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); deferredInstall = event; });
+  window.addEventListener("beforeunload", () => { cleanupRecording(); cleanupRoleplay(false); });
+}
+
+function setupServiceWorker() {
+  if (!("serviceWorker" in navigator) || !location.protocol.startsWith("http")) return;
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.register("sw.js").then(registration => {
+    registration.update().catch(() => {});
+    registration.addEventListener("updatefound", () => {
+      const worker = registration.installing;
+      worker?.addEventListener("statechange", () => {
+        if (worker.state === "installed" && navigator.serviceWorker.controller) $("updateBanner").hidden = false;
+      });
+    });
+  }).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController) $("updateBanner").hidden = false; });
+}
+
+function initialize() {
+  bindEvents();
+  state.metrics.openings++;
+  saveState(false);
+  updateAll();
+  setupOnboarding();
+  setupServiceWorker();
+  if ("speechSynthesis" in window) window.speechSynthesis.addEventListener?.("voiceschanged", selectVoice, { once: true });
+}
+
+initialize();
