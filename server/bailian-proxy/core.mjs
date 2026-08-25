@@ -122,7 +122,7 @@ export function buildQwenRequest(input) {
   const safe = validateCoachPayload(input);
   const scenario = SCENARIOS[safe.sceneId];
   const system = [
-    "You are MIA inside SAY/01, an English speaking coach for an adult Chinese learner at CEFR pre-A1/A1.",
+    "You are MIA inside 十一说 (ELEVEN SAYS), an English speaking coach for an adult Chinese learner at CEFR pre-A1/A1.",
     `Stay in role as ${scenario.role}.`,
     `Scene goal: ${scenario.goal}`,
     "Make this feel like a real, warm conversation, not a quiz and not a lecture.",

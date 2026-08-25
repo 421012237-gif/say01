@@ -7,20 +7,20 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="SAY/01">
-  <meta name="description" content="SAY/01：给怕开口的成年人，在真实场景里自然记住并说出英语">
+  <meta name="apple-mobile-web-app-title" content="十一说">
+  <meta name="description" content="十一说：给怕开口的成年人，在真实场景里自然记住并说出英语">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.4.1">
-  <title>SAY/01｜先开口，自然记住</title>
+  <link rel="stylesheet" href="styles.css?v=2.4.2">
+  <title>十一说｜先开口，自然记住</title>
 </head>
 <body>
   <div class="update-banner" id="updateBanner" hidden><span>新版已经准备好</span><button type="button" id="reloadUpdate">立即更新</button></div>
 
   <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle" hidden>
     <div class="onboarding-card">
-      <div class="onboarding-mark" aria-hidden="true">01</div>
+      <div class="onboarding-mark" aria-hidden="true">11</div>
       <div class="kicker">SPEAK FIRST. PERFECT LATER.</div>
       <h1 id="onboardingTitle">先选一个<br>你真想开口的地方。</h1>
       <p>没有考试，没有语法第一章。直接进入你最可能遇到的现场。</p>
@@ -139,14 +139,14 @@
 
   <div class="app" id="app">
     <header class="topbar">
-      <button class="brand" type="button" data-go="home" aria-label="返回首页"><span class="brand-mark" aria-hidden="true">01</span><span>SAY/01</span></button>
+      <button class="brand" type="button" data-go="home" aria-label="返回十一说首页"><span class="brand-mark" aria-hidden="true">11</span><span><b>十一说</b><small>ELEVEN SAYS</small></span></button>
       <button class="streak" type="button" data-go="profile" aria-label="查看连续学习记录">STREAK&nbsp;<span id="streakCount">0</span></button>
     </header>
 
     <main>
       <section class="view active" id="homeView" aria-labelledby="homeTitle">
         <div class="hero">
-          <div class="hero-grid" aria-hidden="true"><span class="hero-deco-number">01</span></div>
+          <div class="hero-grid" aria-hidden="true"><span class="hero-deco-number">11</span></div>
           <div class="hero-topline"><span>DAILY DROP / <span id="missionNumber">01</span></span><span id="minutesLabel">5 MIN</span></div>
           <div class="kicker acid">SPEAK FIRST. PERFECT LATER.</div>
           <h1 id="homeTitle">先开口，<br>完美以后。</h1>
@@ -155,7 +155,7 @@
           <button class="button primary hero-button" type="button" id="continueBtn">DROP 01 · 现在开口 →</button>
         </div>
 
-        <div class="signal-ticker" aria-label="SAY/01 品牌宣言"><div>SPEAK FIRST&nbsp; ✦ &nbsp;REAL LIFE ENGLISH&nbsp; ✦ &nbsp;NO SHAME&nbsp; ✦ &nbsp;SAY IT OUT LOUD&nbsp; ✦ &nbsp;SPEAK FIRST&nbsp; ✦ &nbsp;REAL LIFE ENGLISH&nbsp; ✦ &nbsp;NO SHAME&nbsp; ✦ &nbsp;SAY IT OUT LOUD&nbsp; ✦ &nbsp;</div></div>
+        <div class="signal-ticker" aria-label="十一说品牌宣言"><div>ELEVEN SAYS&nbsp; ✦ &nbsp;REAL LIFE ENGLISH&nbsp; ✦ &nbsp;NO SHAME&nbsp; ✦ &nbsp;SAY IT OUT LOUD&nbsp; ✦ &nbsp;ELEVEN SAYS&nbsp; ✦ &nbsp;REAL LIFE ENGLISH&nbsp; ✦ &nbsp;NO SHAME&nbsp; ✦ &nbsp;SAY IT OUT LOUD&nbsp; ✦ &nbsp;</div></div>
 
         <div class="section-head"><h2>今日<br>脉冲</h2><span class="micro" id="dailyGoalLabel">目标 5 句</span></div>
         <div class="panel progress-panel">
@@ -283,7 +283,7 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="ai-coach.js?v=2.4.1" defer></script>
-  <script src="app.js?v=2.4.1" defer></script>
+  <script src="ai-coach.js?v=2.4.2" defer></script>
+  <script src="app.js?v=2.4.2" defer></script>
 </body>
 </html>

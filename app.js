@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.1";
+const APP_VERSION = "2.4.2";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";
@@ -1664,12 +1664,12 @@ function finishQuiz() {
 }
 
 function exportProgress() {
-  const payload = { app: "SAY/01", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
+  const payload = { app: "十一说", appId: "com.say01.english", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `SAY01进度-${localDateKey()}.json`;
+  anchor.download = `十一说进度-${localDateKey()}.json`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -1694,7 +1694,7 @@ function importProgress(file) {
       saveState();
       showView("home");
       toast("进度已经恢复。");
-    } catch { toast("这个文件不是有效的 SAY/01 进度。"); }
+    } catch { toast("这个文件不是有效的十一说进度。"); }
     $("importFile").value = "";
   };
   reader.readAsText(file);
@@ -1717,13 +1717,13 @@ function createCalendarReminder() {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//SAY01//Daily Practice//ZH",
+    "PRODID:-//ELEVEN-SAYS//Daily Practice//ZH",
     "BEGIN:VEVENT",
     `UID:xiaobai-english-${Date.now()}@local`,
     `DTSTART:${calendarDate(start)}`,
     "RRULE:FREQ=DAILY",
     `DURATION:PT${duration}M`,
-    "SUMMARY:SAY/01｜今天开口一句",
+    "SUMMARY:十一说｜今天开口一句",
     `DESCRIPTION:用 ${duration} 分钟完成一句真实英语表达。无需连续完美，只要今天开口。`,
     "END:VEVENT",
     "END:VCALENDAR"
@@ -1732,7 +1732,7 @@ function createCalendarReminder() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "SAY01每日提醒.ics";
+  anchor.download = "十一说每日提醒.ics";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -1742,7 +1742,7 @@ function createCalendarReminder() {
 
 function showToastInstallHelp() {
   if (isNativeAndroid()) {
-    toast("你现在就在 SAY/01 安卓 App 里。");
+    toast("你现在就在十一说安卓 App 里。");
     return;
   }
   const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);

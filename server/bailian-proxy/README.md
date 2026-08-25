@@ -1,4 +1,4 @@
-# SAY/01 百炼安全中转
+# 十一说百炼安全中转
 
 这个服务把百炼长期 API Key 留在云端，只向手机 App 暴露可撤销、可限频的访问口令。它固定使用：
 
@@ -34,7 +34,7 @@ npm start
 node server/bailian-proxy/server.mjs
 ```
 
-部署完成后，把函数的 HTTPS 公网地址和 `SAY01_ACCESS_TOKEN` 填入 SAY/01 的“AI 陪练连接”。不要把 `DASHSCOPE_API_KEY` 填进手机。
+部署完成后，把函数的 HTTPS 公网地址和 `SAY01_ACCESS_TOKEN` 填入十一说的“AI 陪练连接”。不要把 `DASHSCOPE_API_KEY` 填进手机。`SAY01_` 环境变量前缀作为内部兼容标识暂时保留，避免现有部署配置失效。
 
 ## 已有保护
 

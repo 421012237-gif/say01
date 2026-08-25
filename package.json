@@ -1,12 +1,14 @@
 {
   "name": "say01-android",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "private": true,
-  "description": "SAY/01 Android self-test package",
+  "description": "十一说 Android self-test package",
   "scripts": {
+    "generate:assets": "capacitor-assets generate --android --iconBackgroundColor '#08070a' --iconBackgroundColorDark '#08070a' --splashBackgroundColor '#08070a' --splashBackgroundColorDark '#08070a'",
     "generate:audio": "node scripts/generate-audio.mjs",
     "verify:audio": "node scripts/verify-audio.mjs",
     "verify:ai": "node scripts/verify-ai.mjs && node scripts/verify-bailian-proxy.mjs",
+    "verify:brand": "node scripts/verify-brand.mjs",
     "sync:web": "node scripts/sync-web.mjs",
     "sync:android": "npm run sync:web && cap sync android",
     "build:android:debug": "npm run sync:android && cd android && ./gradlew assembleDebug"

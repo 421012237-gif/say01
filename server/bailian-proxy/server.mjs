@@ -212,6 +212,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const config = readConfig();
   const port = Number(process.env.PORT) || 9000;
   createServer(createHandler(config)).listen(port, "0.0.0.0", () => {
-    console.info(`SAY/01 Bailian proxy listening on ${port}; model=${CHAT_MODEL}; tts=${Boolean(config.ttsUrl)}`);
+    console.info(`十一说 Bailian proxy listening on ${port}; model=${CHAT_MODEL}; tts=${Boolean(config.ttsUrl)}`);
   });
 }
