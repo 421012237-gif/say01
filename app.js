@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.4.1";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";
@@ -289,6 +289,8 @@ let aiTurnCount = 0;
 let aiLastResult = null;
 let aiBusy = false;
 let aiRecognition = null;
+let activeAiAudio = null;
+let aiVoiceAvailable = null;
 let currentAiReviewId = null;
 let deferredInstall = null;
 let toastTimer = null;
@@ -1029,22 +1031,26 @@ function cleanupRoleplay(closeOverlay = true) {
 }
 
 function loadAiSettings() {
+  const empty = { proxyUrl: "", accessToken: "", consent: false };
   try {
     const saved = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY));
-    if (!saved || typeof saved !== "object") return { mode: "gemini", apiKey: "", proxyUrl: "", consent: false };
-    return {
-      mode: saved.mode === "proxy" ? "proxy" : "gemini",
-      apiKey: String(saved.apiKey || "").trim().slice(0, 240),
+    if (!saved || typeof saved !== "object") return empty;
+    const sanitized = {
       proxyUrl: String(saved.proxyUrl || "").trim().slice(0, 400),
+      accessToken: String(saved.accessToken || "").trim().slice(0, 300),
       consent: saved.consent === true
     };
+    if (saved.apiKey || saved.mode || Object.prototype.hasOwnProperty.call(saved, "apiKey")) {
+      localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(sanitized));
+    }
+    return sanitized;
   } catch {
-    return { mode: "gemini", apiKey: "", proxyUrl: "", consent: false };
+    return empty;
   }
 }
 
 function aiIsConfigured() {
-  return aiSettings.consent && (aiSettings.mode === "proxy" ? window.SayAi?.proxyUrlAllowed(aiSettings.proxyUrl) : Boolean(aiSettings.apiKey));
+  return aiSettings.consent && window.SayAi?.proxyUrlAllowed(aiSettings.proxyUrl) && aiSettings.accessToken.length >= 24;
 }
 
 function saveAiSettings() {
@@ -1058,13 +1064,9 @@ function renderAiConnectionStatus() {
     $("aiConnectionStatus").textContent = "尚未连接。基础课程仍可完全离线使用。";
     return;
   }
-  if (aiSettings.mode === "proxy") {
-    let host = "安全代理";
-    try { host = new URL(aiSettings.proxyUrl).host; } catch {}
-    $("aiConnectionStatus").textContent = `已连接安全代理 · ${host}。AI 对话联网，课程仍可离线。`;
-    return;
-  }
-  $("aiConnectionStatus").textContent = `个人测试模式 · ${window.SayAi?.MODEL || "Gemini"}。密钥只保存在本机，不进入安装包和进度备份。`;
+  let host = "安全中转";
+  try { host = new URL(aiSettings.proxyUrl).host; } catch {}
+  $("aiConnectionStatus").textContent = `已连接 ${window.SayAi?.PROVIDER || "百炼"} ${window.SayAi?.MODEL || "qwen3.7-plus"} · ${host}。基础课程仍可离线。`;
 }
 
 function openAiCoach(forceSetup = false) {
@@ -1084,37 +1086,34 @@ function showAiSetup() {
   $("aiChat").hidden = true;
   $("aiRecap").hidden = true;
   $("aiTopScene").textContent = "连接 AI 陪练";
-  $("aiKeyInput").value = "";
-  $("aiKeyInput").placeholder = aiSettings.apiKey ? "本机已有密钥；留空可继续使用" : "粘贴你的密钥";
-  $("aiProxyInput").value = aiSettings.mode === "proxy" ? aiSettings.proxyUrl : "";
+  $("aiProxyInput").value = aiSettings.proxyUrl;
+  $("aiAccessTokenInput").value = "";
+  $("aiAccessTokenInput").placeholder = aiSettings.accessToken ? "本机已有访问口令；留空可继续使用" : "粘贴服务端访问口令";
   $("aiConsent").checked = aiSettings.consent;
-  $("aiSetupStatus").textContent = aiSettings.apiKey ? "本机已有一枚个人测试密钥，页面不会把它显示出来。" : "";
+  $("aiSetupStatus").textContent = aiSettings.accessToken ? "本机已有可撤销访问口令；百炼 API Key 始终只在服务端。" : "";
 }
 
 function applyAiConnection() {
   const consent = $("aiConsent").checked;
   const proxyUrl = $("aiProxyInput").value.trim();
-  const enteredKey = $("aiKeyInput").value.trim();
-  const apiKey = enteredKey || aiSettings.apiKey;
+  const enteredToken = $("aiAccessTokenInput").value.trim();
+  const accessToken = enteredToken || aiSettings.accessToken;
   if (!consent) {
     $("aiSetupStatus").textContent = "请先确认联网和数据说明。";
     return;
   }
-  if (proxyUrl) {
-    if (!window.SayAi?.proxyUrlAllowed(proxyUrl)) {
-      $("aiSetupStatus").textContent = "代理地址需为同源 HTTPS 或 *.workers.dev 地址。";
-      return;
-    }
-    aiSettings = { mode: "proxy", apiKey: "", proxyUrl, consent: true };
-  } else {
-    if (apiKey.length < 16) {
-      $("aiSetupStatus").textContent = "还没有可用密钥。先去 AI Studio 免费创建，再粘贴回来。";
-      return;
-    }
-    aiSettings = { mode: "gemini", apiKey, proxyUrl: "", consent: true };
+  if (!window.SayAi?.proxyUrlAllowed(proxyUrl)) {
+    $("aiSetupStatus").textContent = "请输入部署完成后的 HTTPS 百炼中转地址。";
+    return;
   }
+  if (accessToken.length < 24) {
+    $("aiSetupStatus").textContent = "访问口令至少需要 24 位；它不是百炼 API Key。";
+    return;
+  }
+  aiSettings = { proxyUrl, accessToken, consent: true };
+  aiVoiceAvailable = null;
   saveAiSettings();
-  $("aiKeyInput").value = "";
+  $("aiAccessTokenInput").value = "";
   beginAiChat();
 }
 
@@ -1137,7 +1136,8 @@ function beginAiChat() {
   $("aiChatTitle").textContent = scenario.title;
   $("aiSceneGoal").textContent = scenario.goal;
   $("aiChatStream").innerHTML = "";
-  appendAiBubble("model", scenario.openerEn, scenario.openerZh);
+  const openerBubble = appendAiBubble("model", scenario.openerEn, scenario.openerZh);
+  addAiVoiceControl(openerBubble, scenario.openerEn);
   $("aiCoachNote").hidden = true;
   $("aiHint").hidden = true;
   $("aiUserInput").value = "";
@@ -1167,6 +1167,77 @@ function appendAiBubble(role, english, chinese = "") {
   return bubble;
 }
 
+function stopAiVoice() {
+  if (!activeAiAudio) return;
+  activeAiAudio.pause();
+  activeAiAudio.src = "";
+  activeAiAudio = null;
+  document.querySelectorAll(".ai-voice-button.playing").forEach(button => {
+    button.classList.remove("playing");
+    button.textContent = "▶ 听 Mia 少女声";
+  });
+}
+
+async function playAiVoice(audioDataUrl, button, automatic = false) {
+  stopAiVoice();
+  const audio = new Audio(audioDataUrl);
+  activeAiAudio = audio;
+  button.classList.add("playing");
+  button.textContent = "正在播放 Mia…";
+  const finish = () => {
+    if (activeAiAudio === audio) activeAiAudio = null;
+    button.classList.remove("playing");
+    button.textContent = "▶ 再听一次";
+  };
+  audio.onended = finish;
+  audio.onerror = () => {
+    finish();
+    button.textContent = "声音加载失败 · 点我重试";
+  };
+  try {
+    await audio.play();
+  } catch (error) {
+    finish();
+    button.textContent = automatic ? "▶ 点一下听 Mia 少女声" : "▶ 再点一次播放";
+    if (!automatic) throw error;
+  }
+}
+
+function addAiVoiceControl(bubble, english) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "ai-voice-button";
+  if (aiVoiceAvailable === false) {
+    button.textContent = "少女声尚未配置";
+    button.disabled = true;
+    bubble.appendChild(button);
+    return;
+  }
+  button.textContent = "Mia 少女声加载中…";
+  button.disabled = true;
+  bubble.appendChild(button);
+  window.SayAi.requestSpeech({ settings: aiSettings, text: english })
+    .then(result => {
+      if (!bubble.isConnected) return;
+      aiVoiceAvailable = true;
+      button.disabled = false;
+      button.textContent = "▶ 听 Mia 少女声";
+      button.addEventListener("click", () => playAiVoice(result.audioDataUrl, button).catch(() => {}));
+      playAiVoice(result.audioDataUrl, button, true).catch(() => {});
+    })
+    .catch(error => {
+      if (!bubble.isConnected) return;
+      const message = String(error?.message || "");
+      if (message.includes("TTS_HTTP_501") || message.includes("TTS_HTTP_503") || message.includes("TTS_NOT_CONFIGURED")) {
+        aiVoiceAvailable = false;
+        button.textContent = "少女声尚未配置";
+      } else {
+        button.textContent = "少女声暂时没接上";
+      }
+      button.disabled = true;
+    });
+}
+
 function setAiBusy(busy) {
   aiBusy = busy;
   $("aiSendBtn").disabled = busy || aiTurnCount >= 8;
@@ -1183,9 +1254,10 @@ function aiMemoryTargets() {
 function aiErrorMessage(error) {
   const message = String(error?.message || "");
   if (!navigator.onLine) return "手机现在没有网络；基础课程仍可离线使用。";
-  if (message.includes("AI_HTTP_401") || message.includes("AI_HTTP_403")) return "密钥无效或权限不足。到“我的 → AI 陪练连接”更换密钥。";
-  if (message.includes("AI_HTTP_429")) return "免费额度暂时用完或请求太快，稍后再试。";
-  if (message.includes("AI_HTTP_400")) return "AI 没接住这次请求；请检查密钥后换一句再试。";
+  if (message.includes("AI_ACCESS_TOKEN_MISSING")) return "还没有服务端访问口令。到“我的 → AI 陪练连接”重新填写。";
+  if (message.includes("AI_HTTP_401") || message.includes("AI_HTTP_403")) return "访问口令无效或中转服务没有权限。到“我的 → AI 陪练连接”检查连接。";
+  if (message.includes("AI_HTTP_429")) return "百炼额度暂时用完，或这一分钟请求太快，稍后再试。";
+  if (message.includes("AI_HTTP_400")) return "AI 没接住这次请求；换一句简单英语再试。";
   if (message.includes("AbortError")) return "AI 等得有点久，网络恢复后再发一次。";
   if (message.includes("AI_RESPONSE") || message.includes("AI_NO_CANDIDATE")) return "AI 这次回复格式不完整，再发一次就好。";
   return "AI 暂时没有接上。检查网络或连接设置后再试。";
@@ -1220,7 +1292,8 @@ async function submitAiTurn() {
     aiHistory.push({ role: "model", text: result.reply_en });
     aiTurnCount++;
     state.metrics.aiTurns++;
-    appendAiBubble("model", result.reply_en, result.reply_zh);
+    const replyBubble = appendAiBubble("model", result.reply_en, result.reply_zh);
+    addAiVoiceControl(replyBubble, result.reply_en);
     $("aiCoachFeedback").textContent = result.fix_to ? `${result.feedback_zh} 更自然：${result.fix_to}${result.fix_zh ? ` · ${result.fix_zh}` : ""}` : result.feedback_zh;
     $("aiCoachNote").hidden = false;
     $("aiHintEnglish").textContent = result.hint_en;
@@ -1319,6 +1392,7 @@ function finishAiSession() {
 function closeAiCoach() {
   aiRecognition?.abort?.();
   aiRecognition = null;
+  stopAiVoice();
   $("aiOverlay").hidden = true;
   $("app").inert = false;
   $("app").removeAttribute("aria-hidden");
@@ -1330,15 +1404,17 @@ function closeAiCoach() {
 }
 
 function clearAiConnection() {
-  if (!aiSettings.apiKey && !aiSettings.proxyUrl) {
-    toast("本机没有保存 AI 密钥。");
+  if (!aiSettings.accessToken && !aiSettings.proxyUrl) {
+    toast("本机没有保存 AI 连接。");
     return;
   }
-  if (!confirm("确定删除这台手机保存的 AI 连接吗？学习进度和 AI 记忆句不会删除。")) return;
+  if (!confirm("确定删除这台手机保存的百炼中转地址和访问口令吗？学习进度和 AI 记忆句不会删除。")) return;
+  stopAiVoice();
   localStorage.removeItem(AI_SETTINGS_KEY);
   aiSettings = loadAiSettings();
+  aiVoiceAvailable = null;
   renderAiConnectionStatus();
-  toast("本机 AI 密钥已经删除。");
+  toast("本机 AI 连接已经删除。");
 }
 
 function dueAiMemories() {

@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 await import("../ai-coach.js");
 const ai = globalThis.SayAi;
 
-assert.equal(ai.MODEL, "gemini-2.5-flash-lite");
+assert.equal(ai.PROVIDER, "阿里云百炼");
+assert.equal(ai.MODEL, "qwen3.7-plus");
+assert.equal(ai.VOICE_MODEL, "qwen-audio-3.0-tts-flash");
 assert.deepEqual(Object.keys(ai.SCENARIOS).sort(), ["cafe", "rescue", "shopping", "social", "travel", "work"]);
 
 const normalized = ai.normalizeResponse({ reply_en: "  Sounds good!  ", reply_zh: " 好的！ " });
@@ -14,18 +16,8 @@ assert.ok(normalized.memory_en);
 const fenced = ai.parseJsonText('```json\n{"reply_en":"Nice!","reply_zh":"很好"}\n```');
 assert.equal(fenced.reply_en, "Nice!");
 
-const request = ai.buildGeminiRequest({
-  sceneId: "cafe",
-  history: [{ role: "model", text: "What can I get for you?" }],
-  userText: "Coffee please",
-  memories: [{ en: "No sugar, please.", zh: "请不要糖。" }]
-});
-assert.equal(request.generationConfig.responseMimeType, "application/json");
-assert.match(request.systemInstruction.parts[0].text, /Correct at most ONE/);
-assert.match(request.contents[0].parts[0].text, /No sugar, please/);
-
-const payload = {
-  candidates: [{ content: { parts: [{ text: JSON.stringify({
+const qwenPayload = {
+  choices: [{ message: { content: JSON.stringify({
     reply_en: "Hot or iced?",
     reply_zh: "热的还是冰的？",
     feedback_zh: "表达清楚。",
@@ -36,39 +28,65 @@ const payload = {
     hint_zh: "请给我冰的。",
     memory_en: "Iced, please.",
     memory_zh: "请给我冰的。"
-  }) }] } }]
+  }) } }]
+};
+assert.equal(ai.extractQwenResponse(qwenPayload).reply_en, "Hot or iced?");
+
+const settings = {
+  proxyUrl: "https://say01-api.example.com/",
+  accessToken: "test-access-token-24-characters",
+  consent: true
 };
 
-let directRequest;
-const response = await ai.requestCoach({
-  settings: { mode: "gemini", apiKey: "test-key-long-enough" },
+let coachRequest;
+const coachResponse = await ai.requestCoach({
+  settings,
   sceneId: "cafe",
   history: [],
   userText: "Coffee please",
   memories: [],
   fetchImpl: async (url, options) => {
-    directRequest = { url, options };
-    return { ok: true, json: async () => payload };
+    coachRequest = { url, options };
+    return { ok: true, json: async () => qwenPayload };
   }
 });
-assert.match(directRequest.url, /gemini-2\.5-flash-lite:generateContent$/);
-assert.equal(directRequest.options.headers["x-goog-api-key"], "test-key-long-enough");
-assert.equal(response.hint_en, "Iced, please.");
+assert.equal(coachRequest.url, settings.proxyUrl);
+assert.equal(coachRequest.options.headers.Authorization, `Bearer ${settings.accessToken}`);
+assert.equal(JSON.parse(coachRequest.options.body).action, "coach");
+assert.equal(coachResponse.hint_en, "Iced, please.");
 
-assert.equal(ai.proxyUrlAllowed("https://demo.workers.dev"), true);
-assert.equal(ai.proxyUrlAllowed("http://demo.workers.dev"), false);
-assert.equal(ai.proxyUrlAllowed("https://example.com/collect"), false);
+let ttsRequest;
+const speech = await ai.requestSpeech({
+  settings,
+  text: "Hot or iced?",
+  fetchImpl: async (url, options) => {
+    ttsRequest = { url, options };
+    return { ok: true, json: async () => ({ audioDataUrl: "data:audio/mpeg;base64,SUQz", voice: "longanhuan_v3.6" }) };
+  }
+});
+assert.equal(JSON.parse(ttsRequest.options.body).action, "tts");
+assert.equal(speech.voice, "longanhuan_v3.6");
+
+assert.equal(ai.proxyUrlAllowed("https://say01.cn-beijing.fcapp.run"), true);
+assert.equal(ai.proxyUrlAllowed("https://api.example.com/say01"), true);
+assert.equal(ai.proxyUrlAllowed("http://api.example.com/say01"), false);
+assert.equal(ai.proxyUrlAllowed("https://name:secret@example.com/say01"), false);
 
 await assert.rejects(
   ai.requestCoach({
-    settings: { mode: "gemini", apiKey: "test-key-long-enough" },
+    settings,
     sceneId: "cafe",
     history: [],
     userText: "Hello",
     memories: [],
-    fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: "quota" } }) })
+    fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({ error: "quota" }) })
   }),
   /AI_HTTP_429/
 );
 
-console.log("AI coach verification passed: prompt, JSON parsing, direct request, proxy allowlist, and error handling.");
+await assert.rejects(
+  ai.requestCoach({ settings: { proxyUrl: settings.proxyUrl, accessToken: "short" }, sceneId: "cafe", history: [], userText: "Hello", memories: [] }),
+  /AI_ACCESS_TOKEN_MISSING/
+);
+
+console.log("AI client verification passed: Bailian model, proxy auth, Qwen JSON, TTS data, HTTPS policy, and errors.");

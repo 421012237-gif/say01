@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#08070a">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://generativelanguage.googleapis.com https://*.workers.dev; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="SAY/01">
@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.4.0">
+  <link rel="stylesheet" href="styles.css?v=2.4.1">
   <title>SAY/01｜先开口，自然记住</title>
 </head>
 <body>
@@ -90,17 +90,14 @@
 
       <section class="ai-setup" id="aiSetup" aria-labelledby="aiOverlayTitle">
         <div class="ai-orbit" aria-hidden="true"><span>AI</span></div>
-        <p class="kicker">YOUR PRIVATE TEST KEY</p>
-        <h2 id="aiOverlayTitle">先连上你的<br>免费 AI。</h2>
-        <p class="ai-setup-copy">当前只供你自己测试。密钥不会写进安装包、不会进入学习备份，只保存在这台手机里。</p>
-        <a class="ai-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">去 Google AI Studio 免费创建密钥 ↗</a>
-        <label class="ai-field" for="aiKeyInput"><span>GEMINI API KEY</span><input id="aiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴你的密钥"></label>
-        <details class="ai-advanced">
-          <summary>已有安全代理地址？</summary>
-          <p>正式给别人使用时，应把密钥放在服务端。这里支持同源地址或 Cloudflare Workers 的 HTTPS 地址。</p>
-          <label class="ai-field" for="aiProxyInput"><span>SECURE PROXY URL</span><input id="aiProxyInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://your-worker.workers.dev"></label>
-        </details>
-        <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>我知道 AI 模式需要联网；对话文字会发送给 Google 或我填写的代理服务。Gemini 免费层的内容可能被用于改进产品。</span></label>
+        <p class="kicker">BAILIAN / PRIVATE ROUTE</p>
+        <h2 id="aiOverlayTitle">连上百炼，<br>开始接话。</h2>
+        <p class="ai-setup-copy">qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。</p>
+        <a class="ai-key-link" href="https://help.aliyun.com/zh/model-studio/get-api-key" target="_blank" rel="noopener noreferrer">查看百炼安全连接说明 ↗</a>
+        <label class="ai-field" for="aiProxyInput"><span>BAILIAN SECURE ROUTE</span><input id="aiProxyInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://你的百炼中转地址"></label>
+        <label class="ai-field" for="aiAccessTokenInput"><span>REVOCABLE ACCESS TOKEN</span><input id="aiAccessTokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴服务端访问口令"></label>
+        <p class="ai-route-note">这里填写的是可撤销访问口令，不是百炼 API Key。连接地址与口令只保存在这台手机，不进入学习备份。</p>
+        <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>我知道 AI 模式需要联网；本轮对话文字会经我的安全中转发送给阿里云百炼，动态语音也由百炼生成。请勿输入个人敏感信息。</span></label>
         <p class="ai-setup-status" id="aiSetupStatus" aria-live="polite"></p>
         <button class="button primary full" type="button" id="saveAiConnection">保存连接 · 进入场景 →</button>
         <button class="text-button full" type="button" id="cancelAiSetup">暂时不用 AI</button>
@@ -123,7 +120,7 @@
             <button class="button light" type="button" id="aiHintBtn">给我一点提示</button>
             <button class="button acid-button" type="button" id="aiSendBtn">发出去 →</button>
           </div>
-          <p class="ai-status" id="aiStatus" aria-live="polite">AI 回复只显示文字，避免手机系统又读成男声。</p>
+          <p class="ai-status" id="aiStatus" aria-live="polite">AI 回复会尝试使用百炼 Mia 少女声；失败时只显示文字，不回退系统男声。</p>
         </div>
         <button class="ai-finish" type="button" id="finishAiSession">结束这轮 · 收进记忆</button>
       </section>
@@ -269,8 +266,8 @@
         <section class="panel settings-panel ai-settings-panel" aria-labelledby="aiSettingsTitle">
           <div class="ai-settings-heading"><span>AI LIVE / BETA</span><h2 id="aiSettingsTitle">AI 陪练连接</h2></div>
           <p id="aiConnectionStatus">尚未连接。基础课程仍可完全离线使用。</p>
-          <div class="two-buttons"><button class="button acid-button" type="button" id="configureAiBtn">连接 / 更换</button><button class="button light" type="button" id="clearAiConnection">删除本机密钥</button></div>
-          <small>AI 对话需要联网；密钥不进入进度导出。正式分享给别人前请改用服务端安全代理。</small>
+          <div class="two-buttons"><button class="button acid-button" type="button" id="configureAiBtn">连接 / 更换</button><button class="button light" type="button" id="clearAiConnection">删除本机连接</button></div>
+          <small>AI 对话使用百炼 qwen3.7-plus；百炼 API Key 只在服务端，本机仅保存可撤销访问口令。</small>
         </section>
         <section class="panel settings-panel" aria-labelledby="deviceTitle">
           <h2 id="deviceTitle">手机使用</h2>
@@ -286,7 +283,7 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="ai-coach.js?v=2.4.0" defer></script>
-  <script src="app.js?v=2.4.0" defer></script>
+  <script src="ai-coach.js?v=2.4.1" defer></script>
+  <script src="app.js?v=2.4.1" defer></script>
 </body>
 </html>
