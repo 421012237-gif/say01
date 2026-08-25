@@ -1,6 +1,7 @@
-const APP_VERSION = "2.3.3";
+const APP_VERSION = "2.4.0";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
+const AI_SETTINGS_KEY = "say01-ai-connection-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 const DAILY_TARGETS = { 3: 3, 5: 5, 10: 8 };
 
@@ -176,11 +177,12 @@ function emptyState() {
     learnedAt: {},
     reviews: {},
     spelling: {},
+    aiMemories: [],
     best: 0,
     days: [],
     todayKnown: {},
     rate: .68,
-    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, activeDates: [] },
+    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, aiSessions: 0, aiTurns: 0, aiReviews: 0, activeDates: [] },
     migrations: []
   };
 }
@@ -202,10 +204,19 @@ function sanitizeState(raw) {
   merged.learnedAt = Object.fromEntries(Object.entries(merged.learnedAt && typeof merged.learnedAt === "object" ? merged.learnedAt : {}).filter(([id, date]) => validIds.has(id) && /^\d{4}-\d{2}-\d{2}$/.test(date)));
   merged.reviews = Object.fromEntries(Object.entries(merged.reviews && typeof merged.reviews === "object" ? merged.reviews : {}).filter(([id, review]) => validIds.has(id) && review && /^\d{4}-\d{2}-\d{2}$/.test(review.due || "")).map(([id, review]) => [id, { level: Math.max(0, Math.min(4, Number(review.level) || 0)), due: review.due, successes: Math.max(0, Number(review.successes) || 0), lapses: Math.max(0, Number(review.lapses) || 0), lastMs: Math.max(0, Number(review.lastMs) || 0) }]));
   merged.spelling = Object.fromEntries(Object.entries(merged.spelling && typeof merged.spelling === "object" ? merged.spelling : {}).filter(([id]) => validIds.has(id)).map(([id, item]) => [id, { wins: Math.max(0, Math.min(99, Number(item?.wins) || 0)), attempts: Math.max(0, Math.min(999, Number(item?.attempts) || 0)), lastSeen: /^\d{4}-\d{2}-\d{2}$/.test(item?.lastSeen || "") ? item.lastSeen : localDateKey() }]));
+  merged.aiMemories = (Array.isArray(merged.aiMemories) ? merged.aiMemories : []).slice(-30).map(item => ({
+    id: String(item?.id || `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).slice(0, 80),
+    en: String(item?.en || "").replace(/[<>]/g, "").trim().slice(0, 140),
+    zh: String(item?.zh || "").replace(/[<>]/g, "").trim().slice(0, 180),
+    sceneId: sceneById(item?.sceneId) ? item.sceneId : "social",
+    level: Math.max(0, Math.min(4, Number(item?.level) || 0)),
+    due: /^\d{4}-\d{2}-\d{2}$/.test(item?.due || "") ? item.due : addDays(localDateKey(), 1),
+    createdAt: /^\d{4}-\d{2}-\d{2}$/.test(item?.createdAt || "") ? item.createdAt : localDateKey()
+  })).filter(item => item.en);
   merged.todayKnown = Object.fromEntries(Object.entries(merged.todayKnown && typeof merged.todayKnown === "object" ? merged.todayKnown : {}).filter(([date, ids]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(ids)).map(([date, ids]) => [date, [...new Set(ids.filter(id => validIds.has(id)))]]));
   merged.metrics = Object.assign(emptyState().metrics, merged.metrics || {});
   merged.metrics.activeDates = Array.isArray(merged.metrics.activeDates) ? [...new Set(merged.metrics.activeDates)] : [];
-  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
+  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins", "aiSessions", "aiTurns", "aiReviews"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
   merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
   if (merged.profile) {
     merged.profile.name = cleanName(merged.profile.name) || "Alex";
@@ -271,6 +282,14 @@ let roleChunks = [];
 let roleUrls = new Map();
 let roleReplaying = false;
 let roleCompletedLogged = false;
+let aiSettings = loadAiSettings();
+let aiSceneId = null;
+let aiHistory = [];
+let aiTurnCount = 0;
+let aiLastResult = null;
+let aiBusy = false;
+let aiRecognition = null;
+let currentAiReviewId = null;
 let deferredInstall = null;
 let toastTimer = null;
 
@@ -337,7 +356,7 @@ function dueRefs() {
 
 function nextReviewLabel() {
   const today = localDateKey();
-  const future = Object.values(state.reviews).map(item => item?.due).filter(date => date && date > today).sort()[0];
+  const future = [...Object.values(state.reviews).map(item => item?.due), ...(state.aiMemories || []).map(item => item?.due)].filter(date => date && date > today).sort()[0];
   if (!future) return "—";
   const diff = Math.round((parseLocalDate(future) - parseLocalDate(today)) / 86400000);
   return diff === 1 ? "明天" : `${diff}天后`;
@@ -388,7 +407,7 @@ function updateAll() {
   const today = localDateKey();
   const todayCount = state.todayKnown[today]?.length || 0;
   const target = dailyGoal();
-  const due = dueRefs().length;
+  const due = dueRefs().length + dueAiMemories().length;
   const weekCount = weeklyKnownCount();
   const next = nextPhraseRef();
   const nextIncompleteScene = orderedScenes().find(scene => !scene.lines.every(line => state.known.includes(line.id))) || orderedScenes()[0];
@@ -424,7 +443,7 @@ function updateAll() {
   $("profileSpelling").textContent = spellingWordCount();
   $("profileReview").textContent = state.metrics.reviewAnswers;
   $("profileRecordings").textContent = state.metrics.recordings;
-  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
+  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · AI 陪练 ${state.metrics.aiTurns} 回合 · AI 回声 ${state.metrics.aiReviews} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
 
   if (state.profile) {
     $("profileName").value = state.profile.name;
@@ -432,6 +451,8 @@ function updateAll() {
     $("minutesSelect").value = String(state.profile.minutes);
   }
   $("rateSelect").value = String(state.rate || .68);
+  renderAiMemoryReview();
+  renderAiConnectionStatus();
   renderLessonList();
 }
 
@@ -1007,6 +1028,374 @@ function cleanupRoleplay(closeOverlay = true) {
   }
 }
 
+function loadAiSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY));
+    if (!saved || typeof saved !== "object") return { mode: "gemini", apiKey: "", proxyUrl: "", consent: false };
+    return {
+      mode: saved.mode === "proxy" ? "proxy" : "gemini",
+      apiKey: String(saved.apiKey || "").trim().slice(0, 240),
+      proxyUrl: String(saved.proxyUrl || "").trim().slice(0, 400),
+      consent: saved.consent === true
+    };
+  } catch {
+    return { mode: "gemini", apiKey: "", proxyUrl: "", consent: false };
+  }
+}
+
+function aiIsConfigured() {
+  return aiSettings.consent && (aiSettings.mode === "proxy" ? window.SayAi?.proxyUrlAllowed(aiSettings.proxyUrl) : Boolean(aiSettings.apiKey));
+}
+
+function saveAiSettings() {
+  localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(aiSettings));
+  renderAiConnectionStatus();
+}
+
+function renderAiConnectionStatus() {
+  if (!$("aiConnectionStatus")) return;
+  if (!aiIsConfigured()) {
+    $("aiConnectionStatus").textContent = "尚未连接。基础课程仍可完全离线使用。";
+    return;
+  }
+  if (aiSettings.mode === "proxy") {
+    let host = "安全代理";
+    try { host = new URL(aiSettings.proxyUrl).host; } catch {}
+    $("aiConnectionStatus").textContent = `已连接安全代理 · ${host}。AI 对话联网，课程仍可离线。`;
+    return;
+  }
+  $("aiConnectionStatus").textContent = `个人测试模式 · ${window.SayAi?.MODEL || "Gemini"}。密钥只保存在本机，不进入安装包和进度备份。`;
+}
+
+function openAiCoach(forceSetup = false) {
+  cleanupRecording();
+  cleanupRoleplay(false);
+  aiSceneId = currentSceneId || nextPhraseRef().scene.id;
+  $("aiOverlay").hidden = false;
+  $("app").inert = true;
+  $("app").setAttribute("aria-hidden", "true");
+  document.body.classList.add("modal-open");
+  if (forceSetup || !aiIsConfigured()) showAiSetup();
+  else beginAiChat();
+}
+
+function showAiSetup() {
+  $("aiSetup").hidden = false;
+  $("aiChat").hidden = true;
+  $("aiRecap").hidden = true;
+  $("aiTopScene").textContent = "连接 AI 陪练";
+  $("aiKeyInput").value = "";
+  $("aiKeyInput").placeholder = aiSettings.apiKey ? "本机已有密钥；留空可继续使用" : "粘贴你的密钥";
+  $("aiProxyInput").value = aiSettings.mode === "proxy" ? aiSettings.proxyUrl : "";
+  $("aiConsent").checked = aiSettings.consent;
+  $("aiSetupStatus").textContent = aiSettings.apiKey ? "本机已有一枚个人测试密钥，页面不会把它显示出来。" : "";
+}
+
+function applyAiConnection() {
+  const consent = $("aiConsent").checked;
+  const proxyUrl = $("aiProxyInput").value.trim();
+  const enteredKey = $("aiKeyInput").value.trim();
+  const apiKey = enteredKey || aiSettings.apiKey;
+  if (!consent) {
+    $("aiSetupStatus").textContent = "请先确认联网和数据说明。";
+    return;
+  }
+  if (proxyUrl) {
+    if (!window.SayAi?.proxyUrlAllowed(proxyUrl)) {
+      $("aiSetupStatus").textContent = "代理地址需为同源 HTTPS 或 *.workers.dev 地址。";
+      return;
+    }
+    aiSettings = { mode: "proxy", apiKey: "", proxyUrl, consent: true };
+  } else {
+    if (apiKey.length < 16) {
+      $("aiSetupStatus").textContent = "还没有可用密钥。先去 AI Studio 免费创建，再粘贴回来。";
+      return;
+    }
+    aiSettings = { mode: "gemini", apiKey, proxyUrl: "", consent: true };
+  }
+  saveAiSettings();
+  $("aiKeyInput").value = "";
+  beginAiChat();
+}
+
+function beginAiChat() {
+  const scenario = window.SayAi?.SCENARIOS[aiSceneId] || window.SayAi?.SCENARIOS.social;
+  if (!scenario) {
+    $("aiSetupStatus").textContent = "AI 模块没有加载完成，请关闭后重试。";
+    showAiSetup();
+    return;
+  }
+  aiHistory = [{ role: "model", text: scenario.openerEn }];
+  aiTurnCount = 0;
+  aiLastResult = null;
+  aiBusy = false;
+  $("aiSetup").hidden = true;
+  $("aiRecap").hidden = true;
+  $("aiChat").hidden = false;
+  $("aiTopScene").textContent = scenario.title;
+  $("aiPersona").textContent = scenario.persona;
+  $("aiChatTitle").textContent = scenario.title;
+  $("aiSceneGoal").textContent = scenario.goal;
+  $("aiChatStream").innerHTML = "";
+  appendAiBubble("model", scenario.openerEn, scenario.openerZh);
+  $("aiCoachNote").hidden = true;
+  $("aiHint").hidden = true;
+  $("aiUserInput").value = "";
+  $("aiUserInput").disabled = false;
+  setAiBusy(false);
+  $("finishAiSession").textContent = "结束这轮 · 收进记忆";
+  $("aiStatus").textContent = "轮到你。可以打字，也可以点“说给 AI 听”。";
+  setTimeout(() => $("aiUserInput").focus(), 80);
+}
+
+function appendAiBubble(role, english, chinese = "") {
+  const bubble = document.createElement("article");
+  bubble.className = `ai-bubble ${role}`;
+  const label = document.createElement("span");
+  label.textContent = role === "user" ? "YOU" : "MIA";
+  const message = document.createElement("strong");
+  message.lang = "en";
+  message.textContent = english;
+  bubble.append(label, message);
+  if (chinese) {
+    const translation = document.createElement("small");
+    translation.textContent = chinese;
+    bubble.appendChild(translation);
+  }
+  $("aiChatStream").appendChild(bubble);
+  bubble.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  return bubble;
+}
+
+function setAiBusy(busy) {
+  aiBusy = busy;
+  $("aiSendBtn").disabled = busy || aiTurnCount >= 8;
+  $("aiMicBtn").disabled = busy || aiTurnCount >= 8;
+  $("aiHintBtn").disabled = busy;
+  $("aiUserInput").disabled = busy || aiTurnCount >= 8;
+  $("aiSendBtn").textContent = busy ? "AI 正在接话…" : "发出去 →";
+}
+
+function aiMemoryTargets() {
+  return [...(state.aiMemories || [])].sort((a, b) => String(a.due).localeCompare(String(b.due))).slice(0, 5);
+}
+
+function aiErrorMessage(error) {
+  const message = String(error?.message || "");
+  if (!navigator.onLine) return "手机现在没有网络；基础课程仍可离线使用。";
+  if (message.includes("AI_HTTP_401") || message.includes("AI_HTTP_403")) return "密钥无效或权限不足。到“我的 → AI 陪练连接”更换密钥。";
+  if (message.includes("AI_HTTP_429")) return "免费额度暂时用完或请求太快，稍后再试。";
+  if (message.includes("AI_HTTP_400")) return "AI 没接住这次请求；请检查密钥后换一句再试。";
+  if (message.includes("AbortError")) return "AI 等得有点久，网络恢复后再发一次。";
+  if (message.includes("AI_RESPONSE") || message.includes("AI_NO_CANDIDATE")) return "AI 这次回复格式不完整，再发一次就好。";
+  return "AI 暂时没有接上。检查网络或连接设置后再试。";
+}
+
+async function submitAiTurn() {
+  if (aiBusy || aiTurnCount >= 8) return;
+  const userText = window.SayAi?.cleanText($("aiUserInput").value, 180) || "";
+  if (!userText) {
+    $("aiStatus").textContent = "先说或写一句简单英语，哪怕只有两个词也可以。";
+    return;
+  }
+  $("aiUserInput").value = "";
+  $("aiHint").hidden = true;
+  $("aiCoachNote").hidden = true;
+  const bubble = appendAiBubble("user", userText);
+  aiHistory.push({ role: "user", text: userText });
+  setAiBusy(true);
+  $("aiStatus").textContent = "Mia 正在理解你的意思…";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 28000);
+  try {
+    const result = await window.SayAi.requestCoach({
+      settings: aiSettings,
+      sceneId: aiSceneId,
+      history: aiHistory.slice(0, -1),
+      userText,
+      memories: aiMemoryTargets(),
+      fetchImpl: (url, options) => fetch(url, { ...options, signal: controller.signal })
+    });
+    aiLastResult = result;
+    aiHistory.push({ role: "model", text: result.reply_en });
+    aiTurnCount++;
+    state.metrics.aiTurns++;
+    appendAiBubble("model", result.reply_en, result.reply_zh);
+    $("aiCoachFeedback").textContent = result.fix_to ? `${result.feedback_zh} 更自然：${result.fix_to}${result.fix_zh ? ` · ${result.fix_zh}` : ""}` : result.feedback_zh;
+    $("aiCoachNote").hidden = false;
+    $("aiHintEnglish").textContent = result.hint_en;
+    $("aiHintChinese").textContent = result.hint_zh;
+    $("aiHint").hidden = true;
+    if (aiTurnCount >= 8) {
+      $("aiStatus").textContent = "八个回合刚刚好。现在结束，把最好用的一句收进记忆。";
+      $("finishAiSession").textContent = "完成 8 回合 · 收进记忆 →";
+    } else {
+      $("aiStatus").textContent = "意思已经接住。想不到下一句时，再点提示。";
+    }
+    saveState();
+  } catch (error) {
+    aiHistory.pop();
+    bubble.remove();
+    $("aiUserInput").value = userText;
+    $("aiStatus").textContent = aiErrorMessage(error);
+  } finally {
+    clearTimeout(timeout);
+    setAiBusy(false);
+  }
+}
+
+function showAiHint() {
+  if (aiLastResult) {
+    $("aiHint").hidden = false;
+    $("aiHint").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    return;
+  }
+  const scene = sceneById(aiSceneId);
+  const firstUserLine = scene?.lines.find(line => line.speaker === "YOU");
+  $("aiHintEnglish").textContent = firstUserLine ? displayText(firstUserLine.en) : "Hi. Nice to meet you.";
+  $("aiHintChinese").textContent = firstUserLine ? displayText(firstUserLine.zh) : "你好，很高兴认识你。";
+  $("aiHint").hidden = false;
+}
+
+function startAiSpeechRecognition() {
+  if (aiBusy) return;
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    $("aiStatus").textContent = "这台手机暂不支持语音转文字，可以直接打字；课程录音仍然能用。";
+    return;
+  }
+  aiRecognition?.abort?.();
+  aiRecognition = new Recognition();
+  aiRecognition.lang = "en-US";
+  aiRecognition.interimResults = false;
+  aiRecognition.maxAlternatives = 1;
+  aiRecognition.onstart = () => {
+    $("aiMicBtn").textContent = "正在听…";
+    $("aiStatus").textContent = "说一句英语，停下来后会自动填进输入框。";
+  };
+  aiRecognition.onresult = event => {
+    $("aiUserInput").value = event.results?.[0]?.[0]?.transcript || "";
+    $("aiStatus").textContent = "已经听写出来，先看一眼，再点“发出去”。";
+  };
+  aiRecognition.onerror = () => { $("aiStatus").textContent = "这次没有听清，可以重试或直接打字。"; };
+  aiRecognition.onend = () => { $("aiMicBtn").textContent = "● 说给 AI 听"; aiRecognition = null; };
+  try { aiRecognition.start(); } catch { $("aiStatus").textContent = "麦克风还没准备好，稍后再点一次。"; }
+}
+
+function storeAiMemory(result) {
+  const en = window.SayAi?.cleanText(result?.memory_en || result?.fix_to || result?.reply_en, 140) || "";
+  const zh = window.SayAi?.cleanText(result?.memory_zh || result?.fix_zh || result?.reply_zh, 180) || "";
+  if (!en) return null;
+  const existing = state.aiMemories.find(item => item.en.toLowerCase() === en.toLowerCase());
+  if (existing) {
+    existing.zh = zh || existing.zh;
+    existing.sceneId = aiSceneId;
+    existing.due = addDays(localDateKey(), 1);
+    return existing;
+  }
+  const item = { id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, en, zh, sceneId: aiSceneId, level: 0, due: addDays(localDateKey(), 1), createdAt: localDateKey() };
+  state.aiMemories = [...state.aiMemories.slice(-29), item];
+  return item;
+}
+
+function finishAiSession() {
+  if (aiBusy) return;
+  if (!aiLastResult || aiTurnCount < 1) {
+    $("aiStatus").textContent = "先和 Mia 说一句，再结束这轮。";
+    return;
+  }
+  const memory = storeAiMemory(aiLastResult);
+  state.metrics.aiSessions++;
+  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  if (!state.days.includes(localDateKey())) state.days.push(localDateKey());
+  saveState();
+  $("aiChat").hidden = true;
+  $("aiRecap").hidden = false;
+  $("aiRecapEnglish").textContent = memory?.en || aiLastResult.reply_en;
+  $("aiRecapChinese").textContent = memory?.zh || aiLastResult.reply_zh;
+  $("aiTopScene").textContent = "本轮完成";
+}
+
+function closeAiCoach() {
+  aiRecognition?.abort?.();
+  aiRecognition = null;
+  $("aiOverlay").hidden = true;
+  $("app").inert = false;
+  $("app").removeAttribute("aria-hidden");
+  document.body.classList.remove("modal-open");
+  aiHistory = [];
+  aiLastResult = null;
+  aiTurnCount = 0;
+  aiBusy = false;
+}
+
+function clearAiConnection() {
+  if (!aiSettings.apiKey && !aiSettings.proxyUrl) {
+    toast("本机没有保存 AI 密钥。");
+    return;
+  }
+  if (!confirm("确定删除这台手机保存的 AI 连接吗？学习进度和 AI 记忆句不会删除。")) return;
+  localStorage.removeItem(AI_SETTINGS_KEY);
+  aiSettings = loadAiSettings();
+  renderAiConnectionStatus();
+  toast("本机 AI 密钥已经删除。");
+}
+
+function dueAiMemories() {
+  const today = localDateKey();
+  return (state.aiMemories || []).filter(item => (item.due || today) <= today);
+}
+
+function renderAiMemoryReview() {
+  if (!$("aiMemoryPanel")) return;
+  const due = dueAiMemories();
+  $("aiMemoryCount").textContent = due.length ? `${due.length} DUE` : `${state.aiMemories.length} SAVED`;
+  if (!due.length) {
+    currentAiReviewId = null;
+    $("aiMemoryCard").hidden = true;
+    $("aiMemoryEmpty").hidden = false;
+    if (state.aiMemories.length) {
+      const next = [...state.aiMemories].sort((a, b) => String(a.due).localeCompare(String(b.due)))[0];
+      $("aiMemoryEmpty").textContent = `今天没有到期。下一句会在 ${next.due} 自然回来。`;
+    } else {
+      $("aiMemoryEmpty").textContent = "完成一次 AI 对话后，它会替你挑一句最值得复用的话。";
+    }
+    return;
+  }
+  const current = due.find(item => item.id === currentAiReviewId) || due[0];
+  currentAiReviewId = current.id;
+  $("aiMemoryEmpty").hidden = true;
+  $("aiMemoryCard").hidden = false;
+  $("aiMemoryCue").textContent = `${sceneById(current.sceneId)?.title || "现实场景"} · 先回想你上次带走的那一句。`;
+  $("aiMemoryEnglish").textContent = current.en;
+  $("aiMemoryChinese").textContent = current.zh;
+  $("aiMemoryAnswer").hidden = true;
+  $("revealAiMemory").hidden = false;
+}
+
+function revealAiMemory() {
+  if (!currentAiReviewId) return;
+  $("revealAiMemory").hidden = true;
+  $("aiMemoryAnswer").hidden = false;
+}
+
+function gradeAiMemory(grade) {
+  const item = state.aiMemories.find(memory => memory.id === currentAiReviewId);
+  if (!item) return;
+  if (grade === "good") {
+    item.level = Math.min(4, item.level + 1);
+    item.due = addDays(localDateKey(), REVIEW_INTERVALS[item.level] || 30);
+    toast("记住了。它会隔一段时间再回来。");
+  } else {
+    item.level = 0;
+    item.due = addDays(localDateKey(), 1);
+    toast("没关系，明天换个场景再碰一次。");
+  }
+  state.metrics.aiReviews++;
+  currentAiReviewId = null;
+  saveState();
+}
+
 function quizPool() {
   const due = shuffled(dueRefs());
   const known = shuffled(state.known.map(phraseRefById).filter(Boolean));
@@ -1369,6 +1758,22 @@ function bindEvents() {
   $("roleNextBtn").addEventListener("click", nextRoleplayLine);
   $("roleReplayAll").addEventListener("click", replayRoleplay);
   $("roleRestart").addEventListener("click", restartRoleplay);
+  $("startAiCoach").addEventListener("click", () => openAiCoach(false));
+  $("closeAiCoach").addEventListener("click", closeAiCoach);
+  $("cancelAiSetup").addEventListener("click", closeAiCoach);
+  $("saveAiConnection").addEventListener("click", applyAiConnection);
+  $("aiSendBtn").addEventListener("click", submitAiTurn);
+  $("aiMicBtn").addEventListener("click", startAiSpeechRecognition);
+  $("aiHintBtn").addEventListener("click", showAiHint);
+  $("aiUserInput").addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitAiTurn(); }
+  });
+  $("finishAiSession").addEventListener("click", finishAiSession);
+  $("closeAiRecap").addEventListener("click", closeAiCoach);
+  $("configureAiBtn").addEventListener("click", () => openAiCoach(true));
+  $("clearAiConnection").addEventListener("click", clearAiConnection);
+  $("revealAiMemory").addEventListener("click", revealAiMemory);
+  document.querySelectorAll("[data-ai-memory-grade]").forEach(button => button.addEventListener("click", () => gradeAiMemory(button.dataset.aiMemoryGrade)));
   $("startQuiz").addEventListener("click", startQuiz);
   $("retryQuiz").addEventListener("click", startQuiz);
   $("saveSettings").addEventListener("click", saveSettings);
@@ -1400,7 +1805,7 @@ function bindEvents() {
   $("finishOnboarding").addEventListener("click", finishOnboarding);
   $("reloadUpdate").addEventListener("click", () => location.reload());
   window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); deferredInstall = event; });
-  window.addEventListener("beforeunload", () => { cleanupRecording(); cleanupRoleplay(false); });
+  window.addEventListener("beforeunload", () => { cleanupRecording(); cleanupRoleplay(false); aiRecognition?.abort?.(); });
 }
 
 function setupServiceWorker() {

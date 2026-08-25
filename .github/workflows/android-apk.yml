@@ -30,6 +30,11 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Verify AI coach and bundled audio
+        run: |
+          npm run verify:ai
+          npm run verify:audio
+
       - name: Sync bundled web app into Android
         run: npm run sync:android
 
@@ -45,7 +50,7 @@ jobs:
       - name: Upload SAY/01 APK
         uses: actions/upload-artifact@v7
         with:
-          name: SAY01-Android-V2.3.3-sweet-girl-voice
+          name: SAY01-Android-V2.4.0-AI-LIVE
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30

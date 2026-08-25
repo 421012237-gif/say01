@@ -7,6 +7,7 @@ const targetRoot = resolve(projectRoot, "app-web");
 const files = [
   "index.html",
   "styles.css",
+  "ai-coach.js",
   "app.js",
   "manifest.webmanifest",
   "icon.svg",
