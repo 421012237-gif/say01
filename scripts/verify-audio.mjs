@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,17 +27,23 @@ let shortest = { file: "", duration: Infinity };
 let longest = { file: "", duration: 0 };
 
 function readDuration(path) {
-  if (process.platform === "darwin") {
-    const info = execFileSync("afinfo", [path], { encoding: "utf8" });
-    return Number(info.match(/estimated duration:\s+([0-9.]+) sec/)?.[1]);
-  }
+  const audio = readFileSync(path);
+  const marker = Buffer.from("mvhd");
+  const typeOffset = audio.indexOf(marker);
+  if (typeOffset < 4) return Number.NaN;
 
-  const duration = execFileSync(
-    "ffprobe",
-    ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
-    { encoding: "utf8" },
-  );
-  return Number(duration.trim());
+  const version = audio[typeOffset + 4];
+  if (version === 0) {
+    const timescale = audio.readUInt32BE(typeOffset + 16);
+    const duration = audio.readUInt32BE(typeOffset + 20);
+    return timescale ? duration / timescale : Number.NaN;
+  }
+  if (version === 1) {
+    const timescale = audio.readUInt32BE(typeOffset + 24);
+    const duration = audio.readBigUInt64BE(typeOffset + 28);
+    return timescale ? Number(duration) / timescale : Number.NaN;
+  }
+  return Number.NaN;
 }
 
 for (const file of files) {
