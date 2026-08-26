@@ -90,7 +90,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v2.6.0-private-test-20260826"
-          ASSET="android/app/build/outputs/apk/debug/app-debug.apk#ElevenSays-Android-V2.6.0-Real-Ability.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk ElevenSays-Android-V2.6.0-Real-Ability.apk
+          ASSET="ElevenSays-Android-V2.6.0-Real-Ability.apk"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ASSET" --clobber
           else
