@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.4";
+const APP_VERSION = "2.5.0";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";
@@ -182,7 +182,7 @@ function emptyState() {
     days: [],
     todayKnown: {},
     rate: .68,
-    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, aiSessions: 0, aiTurns: 0, aiReviews: 0, activeDates: [] },
+    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, speechChecks: 0, speechPasses: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, aiSessions: 0, aiTurns: 0, aiReviews: 0, activeDates: [] },
     migrations: []
   };
 }
@@ -216,7 +216,7 @@ function sanitizeState(raw) {
   merged.todayKnown = Object.fromEntries(Object.entries(merged.todayKnown && typeof merged.todayKnown === "object" ? merged.todayKnown : {}).filter(([date, ids]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(ids)).map(([date, ids]) => [date, [...new Set(ids.filter(id => validIds.has(id)))]]));
   merged.metrics = Object.assign(emptyState().metrics, merged.metrics || {});
   merged.metrics.activeDates = Array.isArray(merged.metrics.activeDates) ? [...new Set(merged.metrics.activeDates)] : [];
-  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins", "aiSessions", "aiTurns", "aiReviews"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
+  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "speechChecks", "speechPasses", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins", "aiSessions", "aiTurns", "aiReviews"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
   merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
   if (merged.profile) {
     merged.profile.name = cleanName(merged.profile.name) || "Alex";
@@ -272,6 +272,8 @@ let mediaRecorder = null;
 let mediaStream = null;
 let recordingChunks = [];
 let recordingUrl = null;
+let speechCheckSerial = 0;
+let browserSpeechCheck = null;
 let activeOriginalAudio = null;
 let questionStartedAt = 0;
 let roleSceneId = null;
@@ -447,7 +449,7 @@ function updateAll() {
   $("profileSpelling").textContent = spellingWordCount();
   $("profileReview").textContent = state.metrics.reviewAnswers;
   $("profileRecordings").textContent = state.metrics.recordings;
-  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · AI 陪练 ${state.metrics.aiTurns} 回合 · AI 回声 ${state.metrics.aiReviews} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
+  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 手机听懂 ${state.metrics.speechPasses}/${state.metrics.speechChecks} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · AI 陪练 ${state.metrics.aiTurns} 回合 · AI 回声 ${state.metrics.aiReviews} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
 
   if (state.profile) {
     $("profileName").value = state.profile.name;
@@ -744,6 +746,14 @@ function finishRecording() {
 }
 
 function cleanupRecording() {
+  speechCheckSerial++;
+  if (browserSpeechCheck) {
+    try { browserSpeechCheck.abort(); } catch {}
+    browserSpeechCheck = null;
+  }
+  if ($("recognizeBtn")?.classList.contains("listening")) {
+    window.Capacitor?.Plugins?.SaySpeechCheck?.cancel?.().catch(() => {});
+  }
   if (mediaRecorder?.state === "recording") {
     mediaRecorder.ondataavailable = null;
     mediaRecorder.onstop = null;
@@ -764,7 +774,16 @@ function cleanupRecording() {
     $("recordStatus").textContent = "等待跟读";
     $("compareBtn").hidden = true;
     $("recordingGrade").hidden = true;
-    $("recognitionResult").textContent = "识别不是发音评分；部分浏览器可能使用系统在线语音服务。";
+    $("recognizeBtn").disabled = false;
+    $("recognizeBtn").classList.remove("listening");
+    $("recognizeBtn").textContent = "🎙 说一句 · 马上判断";
+    $("recognitionResult").textContent = "点一下，说上面的英文。手机系统识别可能联网；十一说不保存录音和识别文字。";
+    $("speechFeedback").hidden = true;
+    $("speechFeedback").className = "speech-feedback";
+    $("speechWordDiff").replaceChildren();
+    $("speechOutcome").textContent = "";
+    $("speechNextStep").textContent = "";
+    $("knownBtn")?.classList.remove("speech-ready");
   }
 }
 
@@ -806,27 +825,116 @@ function gradeRecording(value) {
   toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "很好，保留自己的判断，不使用虚假分数。");
 }
 
-function startSpeechRecognition() {
+function nativeSpeechCheckPlugin() {
+  return isNativeAndroid() ? window.Capacitor?.Plugins?.SaySpeechCheck : null;
+}
+
+function speechCheckErrorMessage(error) {
+  const code = String(error?.message || error || "").toUpperCase();
+  if (code.includes("PERMISSION") || code.includes("NOT-ALLOWED")) return "没有获得麦克风权限。允许后再点一次；拒绝也不影响其他学习。";
+  if (code.includes("NO_MATCH")) return "这次没有听清。离手机近一点，慢慢说一遍就好。";
+  if (code.includes("TIMEOUT") || code.includes("NO-SPEECH")) return "没有听到完整句子。点一下按钮后再开始说。";
+  if (code.includes("NETWORK")) return "手机语音识别暂时连不上网络；固定课程和录音回放仍可使用。";
+  if (code.includes("BUSY")) return "手机还在处理上一遍，等一秒再试。";
+  if (code.includes("UNAVAILABLE") || code.includes("NOT-SUPPORTED")) return "这台手机没有可用的语音识别服务；可以继续使用下面的录音对比。";
+  return "这次没有识别成功。可以再试一次，或使用下面的录音对比。";
+}
+
+function renderSpeechEvaluation(evaluation) {
+  const feedback = $("speechFeedback");
+  feedback.hidden = false;
+  feedback.className = `speech-feedback ${evaluation.outcome}`;
+  $("recognitionResult").textContent = `手机听到：${evaluation.transcript || "—"}`;
+  $("speechWordDiff").replaceChildren(...evaluation.words.map(item => {
+    const token = document.createElement("span");
+    token.className = item.status;
+    token.textContent = item.word;
+    return token;
+  }));
+
+  const passed = ["pass", "understood"].includes(evaluation.outcome);
+  if (evaluation.outcome === "pass") {
+    $("speechOutcome").textContent = "听懂了 ✓ 整句完整";
+    $("speechNextStep").textContent = "这句可以进入真实交流了。直接点“下一句”。";
+  } else if (evaluation.outcome === "understood") {
+    $("speechOutcome").textContent = "能听懂 ✓ 不用追求播音腔";
+    $("speechNextStep").textContent = evaluation.focusWord ? `核心意思已经清楚；想更完整，再带上 ${evaluation.focusWord}。` : "核心意思已经清楚，可以继续。";
+  } else if (evaluation.outcome === "almost") {
+    $("speechOutcome").textContent = evaluation.focusWord ? `差一个关键点：${evaluation.focusWord}` : "已经接近了，再慢一点";
+    $("speechNextStep").textContent = evaluation.focusWord ? `点上面的“听慢速”，只盯住粉色的 ${evaluation.focusWord}，然后再说一次。` : "点上面的“听慢速”，再说一次。";
+  } else {
+    $("speechOutcome").textContent = "这次还没听完整";
+    $("speechNextStep").textContent = evaluation.focusWord ? `先只练粉色的 ${evaluation.focusWord}，再放回整句。` : "先听一遍慢速示范，再说短一点也可以。";
+  }
+
+  state.metrics.speechChecks++;
+  state.metrics.recognitions++;
+  if (passed) {
+    state.metrics.speechPasses++;
+    $("knownBtn").classList.add("speech-ready");
+    $("knownBtn").textContent = "手机听懂了 · 下一句 →";
+  }
+  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  saveState(false);
+}
+
+function browserSpeechResult(serial) {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Recognition) {
-    $("recognitionResult").textContent = "当前浏览器不支持语音识别；录音和回放仍可正常使用。";
+  if (!Recognition) return Promise.reject(new Error("SPEECH_RECOGNIZER_UNAVAILABLE"));
+  return new Promise((resolve, reject) => {
+    const recognition = new Recognition();
+    browserSpeechCheck = recognition;
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
+    recognition.onresult = event => {
+      if (serial !== speechCheckSerial) return;
+      const alternatives = Array.from(event.results[0], item => item.transcript).filter(Boolean);
+      browserSpeechCheck = null;
+      resolve({ transcript: alternatives[0] || "", alternatives });
+    };
+    recognition.onerror = event => {
+      browserSpeechCheck = null;
+      reject(new Error(String(event.error || "SPEECH_SERVICE_ERROR")));
+    };
+    recognition.onend = () => { if (browserSpeechCheck === recognition) browserSpeechCheck = null; };
+    recognition.start();
+  });
+}
+
+async function startSpeechRecognition() {
+  if (!window.SaySpeechCheck?.evaluate) {
+    $("recognitionResult").textContent = "判断模块还没有加载完成，请关闭 App 后重开一次。";
     return;
   }
-  const recognition = new Recognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  $("recognitionResult").textContent = "正在听…请说当前英文句子。";
-  recognition.onresult = event => {
-    const result = event.results[0][0].transcript;
-    $("recognitionResult").textContent = `浏览器听到：${result}。这只是识别结果，不是发音分数。`;
-    state.metrics.recognitions++;
-    saveState(false);
-  };
-  recognition.onerror = event => {
-    $("recognitionResult").textContent = event.error === "not-allowed" ? "没有获得麦克风权限，识别未开始。" : "这次没有识别清楚，可以继续使用录音回放。";
-  };
-  recognition.start();
+  const serial = ++speechCheckSerial;
+  const scene = sceneById(currentSceneId);
+  const line = scene.lines[currentPhraseIndex];
+  const target = displayText(line.en);
+  const button = $("recognizeBtn");
+  button.disabled = true;
+  button.classList.add("listening");
+  button.textContent = "正在听…说完停一下";
+  $("recognitionResult").textContent = "现在说上面的英文。正常说完即可，不需要喊。";
+  $("speechFeedback").hidden = true;
+
+  try {
+    const plugin = nativeSpeechCheckPlugin();
+    const result = plugin ? await plugin.check({ language: "en-US", maxResults: 5 }) : await browserSpeechResult(serial);
+    if (serial !== speechCheckSerial || currentSceneId !== scene.id || scene.lines[currentPhraseIndex]?.id !== line.id) return;
+    const alternatives = Array.isArray(result.alternatives) && result.alternatives.length ? result.alternatives : [result.transcript];
+    const ignoreWords = line.en.includes("{name}") ? [state.profile?.name || "Alex"] : [];
+    renderSpeechEvaluation(window.SaySpeechCheck.evaluate(target, alternatives, { ignoreWords }));
+  } catch (error) {
+    if (serial !== speechCheckSerial || String(error?.message || error).includes("SPEECH_CANCELLED")) return;
+    $("recognitionResult").textContent = speechCheckErrorMessage(error);
+  } finally {
+    if (serial === speechCheckSerial) {
+      button.disabled = false;
+      button.classList.remove("listening");
+      button.textContent = "🎙 再说一次 · 重新判断";
+    }
+  }
 }
 
 function markCurrentKnown() {

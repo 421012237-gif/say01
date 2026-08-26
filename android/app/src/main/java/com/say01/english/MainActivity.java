@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SayAudioPlugin.class);
         registerPlugin(SayAiConfigPlugin.class);
         registerPlugin(SayLocalVoicePlugin.class);
+        registerPlugin(SaySpeechCheckPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

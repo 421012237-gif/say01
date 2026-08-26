@@ -8,6 +8,7 @@ const files = [
   "index.html",
   "styles.css",
   "ai-coach.js",
+  "speech-check.js",
   "app.js",
   "manifest.webmanifest",
   "icon.svg",

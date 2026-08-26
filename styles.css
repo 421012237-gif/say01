@@ -910,6 +910,44 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
 .record-status { margin-top: 12px; }
 .recognition-box { width: 78%; margin: 25px auto 0; }
 .recognition-box .text-button { min-height: 44px; }
+.speech-check-button {
+  min-height: 62px;
+  border-radius: 999px;
+  font-size: 15px;
+  letter-spacing: .01em;
+  box-shadow: 0 0 0 10px rgba(255,43,214,.035), 0 16px 48px rgba(255,43,214,.13);
+}
+.speech-check-button.listening { animation: pulse-pink .7s ease-in-out infinite alternate; }
+.recognition-box > p { margin: 15px auto 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.speech-feedback {
+  margin-top: 24px;
+  padding: 19px 0 7px;
+  border-top: 1px solid rgba(255,43,214,.55);
+  text-align: left;
+}
+.speech-feedback > strong { display: block; color: var(--paper); font-size: 17px; line-height: 1.35; }
+.speech-feedback.pass > strong, .speech-feedback.understood > strong { color: var(--acid); }
+.speech-word-diff { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
+.speech-word-diff span {
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  color: var(--silver);
+  font-size: 13px;
+  font-weight: 850;
+}
+.speech-word-diff span.match { border-color: rgba(194,255,38,.45); color: var(--acid); }
+.speech-word-diff span.missing { border-color: var(--acid); background: rgba(255,43,214,.12); color: var(--paper); }
+.speech-word-diff span.optional { opacity: .5; }
+.speech-feedback > p { margin: 13px 0 0; color: var(--silver); font-size: 12px; line-height: 1.55; }
+.recording-tools { width: 78%; margin: 28px auto 0; border-top: 1px solid rgba(255,255,255,.14); text-align: left; }
+.recording-tools summary { min-height: 48px; padding: 15px 0; display: flex; justify-content: space-between; color: var(--silver); cursor: pointer; font-size: 12px; }
+.recording-tools summary span { color: var(--muted); }
+.recording-tools > p { margin: 0 0 20px; color: var(--muted); font-size: 10px; }
+.recording-tools .record-actions { align-items: center; text-align: center; }
+.recording-tools audio { width: 100%; }
+.recording-tools .compare-button { margin-top: 12px; }
+.lesson-controls .speech-ready { box-shadow: 0 0 0 4px rgba(194,255,38,.12); }
 .update-banner button { min-height: 44px; }
 .mission-note { width: 82%; margin: 27px 0 28px auto; padding: 13px 0 13px 17px; border: 0; border-left: 2px solid var(--acid); background: transparent; }
 .lesson-controls { position: relative; margin: 0 -8px; padding: 8px; background: transparent; }

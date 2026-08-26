@@ -1,6 +1,6 @@
 {
   "name": "say01-android",
-  "version": "2.4.4",
+  "version": "2.5.0",
   "private": true,
   "description": "十一说 Android self-test package",
   "scripts": {
@@ -8,6 +8,7 @@
     "generate:audio": "node scripts/generate-audio.mjs",
     "verify:audio": "node scripts/verify-audio.mjs",
     "verify:ai": "node scripts/verify-ai.mjs && node scripts/verify-bailian-proxy.mjs",
+    "verify:speech": "node scripts/verify-speech-check.mjs",
     "verify:brand": "node scripts/verify-brand.mjs",
     "sync:web": "node scripts/sync-web.mjs",
     "sync:android": "npm run sync:web && cap sync android",

@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.4.4">
+  <link rel="stylesheet" href="styles.css?v=2.5.0">
   <title>十一说｜先开口，自然记住</title>
 </head>
 <body>
@@ -209,16 +209,25 @@
             <div class="use-note"><span>什么时候用</span><p id="phraseWhen"></p></div>
           </article>
           <section class="record-panel" aria-labelledby="recordTitle">
-            <div><span class="micro">SHADOWING</span><h3 id="recordTitle">听完后，录下自己的一遍</h3></div>
-            <p>录音只在当前页面临时播放，不上传、不保存。</p>
-            <div class="record-actions"><button class="button record-button" type="button" id="recordBtn">● 开始录音</button><span class="record-status" id="recordStatus" aria-live="polite">等待跟读</span></div>
-            <audio id="recordingPlayback" controls hidden></audio>
-            <button class="button light full compare-button" type="button" id="compareBtn" hidden>▶ 示范 → 我的 → 示范</button>
-            <div class="self-grade recording-grade" id="recordingGrade" hidden><button class="button light" type="button" data-record-grade="again">还要再练</button><button class="button acid-button" type="button" data-record-grade="close">感觉接近了</button></div>
+            <div><span class="micro">SPEAK / CHECK</span><h3 id="recordTitle">说一句，马上知道能不能听懂</h3></div>
+            <p>不打虚假发音分。只判断核心词有没有被手机听懂，一次只提醒一个词。</p>
             <div class="recognition-box">
-              <button class="text-button" type="button" id="recognizeBtn">可选：让浏览器识别我说了什么</button>
-              <p id="recognitionResult" aria-live="polite">识别不是发音评分；部分浏览器可能使用系统在线语音服务。</p>
+              <button class="button acid-button full speech-check-button" type="button" id="recognizeBtn">🎙 说一句 · 马上判断</button>
+              <p id="recognitionResult" aria-live="polite">点一下，说上面的英文。手机系统识别可能联网；十一说不保存录音和识别文字。</p>
+              <div class="speech-feedback" id="speechFeedback" hidden>
+                <strong id="speechOutcome"></strong>
+                <div class="speech-word-diff" id="speechWordDiff" lang="en"></div>
+                <p id="speechNextStep"></p>
+              </div>
             </div>
+            <details class="recording-tools">
+              <summary>想听自己的声音？录下来对比 <span>可选</span></summary>
+              <p>录音只在当前页面临时播放，不上传、不保存。</p>
+              <div class="record-actions"><button class="button record-button" type="button" id="recordBtn">● 开始录音</button><span class="record-status" id="recordStatus" aria-live="polite">等待跟读</span></div>
+              <audio id="recordingPlayback" controls hidden></audio>
+              <button class="button light full compare-button" type="button" id="compareBtn" hidden>▶ 示范 → 我的 → 示范</button>
+              <div class="self-grade recording-grade" id="recordingGrade" hidden><button class="button light" type="button" data-record-grade="again">还要再练</button><button class="button acid-button" type="button" data-record-grade="close">感觉接近了</button></div>
+            </details>
           </section>
           <div class="mission-note"><span>TODAY'S MOVE</span><p id="phraseMission"></p></div>
           <div class="lesson-controls"><button class="button light" type="button" id="prevPhrase">← 上一句</button><button class="button acid-button" type="button" id="knownBtn">拿下这句 · 下一句 →</button></div>
@@ -285,7 +294,8 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="ai-coach.js?v=2.4.4" defer></script>
-  <script src="app.js?v=2.4.4" defer></script>
+  <script src="ai-coach.js?v=2.5.0" defer></script>
+  <script src="speech-check.js?v=2.5.0" defer></script>
+  <script src="app.js?v=2.5.0" defer></script>
 </body>
 </html>
