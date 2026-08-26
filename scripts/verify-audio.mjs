@@ -26,11 +26,25 @@ if (sentenceFiles.length !== 30 || wordFiles.length !== 30) {
 
 let shortest = { file: "", duration: Infinity };
 let longest = { file: "", duration: 0 };
+
+function readDuration(path) {
+  if (process.platform === "darwin") {
+    const info = execFileSync("afinfo", [path], { encoding: "utf8" });
+    return Number(info.match(/estimated duration:\s+([0-9.]+) sec/)?.[1]);
+  }
+
+  const duration = execFileSync(
+    "ffprobe",
+    ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
+    { encoding: "utf8" },
+  );
+  return Number(duration.trim());
+}
+
 for (const file of files) {
   const path = resolve(audioRoot, file);
   if (statSync(path).size < 4000) throw new Error(`Audio file is unexpectedly small: ${file}`);
-  const info = execFileSync("afinfo", [path], { encoding: "utf8" });
-  const duration = Number(info.match(/estimated duration:\s+([0-9.]+) sec/)?.[1]);
+  const duration = readDuration(path);
   if (!Number.isFinite(duration) || duration < 0.3 || duration > 8) {
     throw new Error(`Invalid duration for ${file}: ${duration}`);
   }
