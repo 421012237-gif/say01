@@ -23,7 +23,7 @@
 npm start
 ```
 
-默认监听 `PORT` 环境变量，未设置时为 `9000`。GET 请求返回不含密钥的健康状态；POST 请求需携带 `Authorization: Bearer <SAY01_ACCESS_TOKEN>`。
+默认监听 `PORT` 环境变量，未设置时为 `9000`。除 CORS 预检外，GET 健康检查和 POST 对话请求都必须携带 `Authorization: Bearer <SAY01_ACCESS_TOKEN>`；健康响应不包含密钥或用户内容。
 
 阿里云函数计算可采用 Web 函数或自定义运行时，启动命令为：
 

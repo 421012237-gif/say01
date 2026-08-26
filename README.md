@@ -1,4 +1,4 @@
-# 十一说手机版 V2.4.3 · LOCAL MIA VOICE
+# 十一说手机版 V2.4.4 · BAILIAN AI PRIVATE TEST
 
 面向成年英语零基础用户的免费、无广告、无需登录的手机口语练习工具。
 
@@ -12,13 +12,13 @@
 
 - iPhone Safari：分享 → 添加到主屏幕
 - Android Chrome：右上角菜单 → 添加到主屏幕 / 安装应用
-- Android APK：安装 `ElevenSays-Android-V2.4.3-本地Mia少女声版.apk`；课程第一屏仍按“1 先听 / 2 跟说 / 3 下一句”操作
+- Android APK：本人自测包安装 `十一说-Android-V2.4.4-百炼AI免手填自测版.apk`；课程第一屏仍按“1 先听 / 2 跟说 / 3 下一句”操作
 
-V2.4.3 采用「十一说 / ELEVEN SAYS」新品牌，并在原有 30 条少女声整句、30 个关键词、录音、角色扮演和间隔复习上保留 `AI LIVE`：百炼 `qwen3.7-plus` 在 6 个现实场景中扮演对方，每次只说一句、只纠正一个最影响交流的问题，并把一条可复用表达放回后续记忆回声。动态回复由 APK 内置 `Kokoro-82M INT8 / af_sky` 在手机本地朗读，不调用百炼语音，也不回退系统男声。固定课程少女声完全保留。
+V2.4.4 采用「十一说 / ELEVEN SAYS」新品牌，并在原有 30 条少女声整句、30 个关键词、录音、角色扮演和间隔复习上保留 `AI LIVE`：百炼 `qwen3.7-plus` 在 6 个现实场景中扮演对方，每次只说一句、只纠正一个最影响交流的问题，并把一条可复用表达放回后续记忆回声。动态回复由 APK 内置 `Kokoro-82M INT8 / af_sky` 在手机本地朗读，不调用百炼语音，也不回退系统男声。固定课程少女声完全保留。
 
-个人自测使用自己的阿里云百炼北京地域账号。App 只连接 `server/bailian-proxy/` 提供的安全中转并保存可撤销访问口令，不能直接粘贴百炼长期 API Key。部署与使用步骤见 `AI陪练使用说明.md` 和 `server/bailian-proxy/README.md`。没有部署真实中转前，基础课程正常可用，AI LIVE 不会伪装成已连接。
+个人自测使用自己的阿里云百炼北京地域账号。V2.4.4 私人自测包已预置独立函数中转地址和可撤销受限口令，首次只需确认联网说明，不再手填技术参数。百炼长期 API Key 只保存在函数环境变量，未进入 APK、网页、源码或项目说明。
 
-Android 支持在构建时通过 `ELEVEN_AI_PROXY_URL` 与 `ELEVEN_AI_ACCESS_TOKEN` 注入已部署中转和可撤销访问凭据。成功预配置后，用户首次只确认联网说明，不再看到或填写技术参数；这两个构建参数不等同于百炼长期 API Key，仍应配合服务端限频、预算和随时撤销。
+Android 支持在构建时通过 `ELEVEN_AI_PROXY_URL` 与 `ELEVEN_AI_ACCESS_TOKEN` 注入已部署中转和可撤销访问凭据。受限口令仍可能被有能力分析 APK 的人提取，所以 V2.4.4 只做本人私下测试，不公开发布；需要立即停用时可在函数环境变量中更换口令。
 
 源码仓库不直接提交约 150MB 的本地语音二进制。首次构建 Android 前运行 `./scripts/fetch-local-voice-assets.sh`；脚本只从 sherpa-onnx 官方 GitHub Release 下载固定版本，并校验写死的 SHA-256。第三方来源与许可证见 `THIRD_PARTY_NOTICES.md`。
 

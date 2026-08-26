@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.3";
+const APP_VERSION = "2.4.4";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";

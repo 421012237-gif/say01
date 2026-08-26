@@ -139,11 +139,13 @@ export function createHandler(config, { fetchImpl = fetch, rateStore = new Map()
       return;
     }
 
+    if (!secureEqual(bearerToken(request), config.accessToken)) {
+      return json(response, 401, { error: "ACCESS_DENIED" }, allowedOrigin);
+    }
     if (request.method === "GET") {
       return json(response, 200, { ok: true, provider: "aliyun-bailian", model: CHAT_MODEL, voice: "local-kokoro-client" }, allowedOrigin);
     }
     if (request.method !== "POST") return json(response, 405, { error: "METHOD_NOT_ALLOWED" }, allowedOrigin);
-    if (!secureEqual(bearerToken(request), config.accessToken)) return json(response, 401, { error: "ACCESS_DENIED" }, allowedOrigin);
     if (!rateAllowed(rateStore, clientAddress(request), config.requestsPerMinute)) return json(response, 429, { error: "RATE_LIMITED" }, allowedOrigin);
 
     try {
