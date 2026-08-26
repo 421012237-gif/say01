@@ -92,11 +92,11 @@
         <div class="ai-orbit" aria-hidden="true"><span>AI</span></div>
         <p class="kicker">BAILIAN / PRIVATE ROUTE</p>
         <h2 id="aiOverlayTitle">连上百炼，<br>开始接话。</h2>
-        <p class="ai-setup-copy">qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。</p>
-        <a class="ai-key-link" href="https://help.aliyun.com/zh/model-studio/get-api-key" target="_blank" rel="noopener noreferrer">查看百炼安全连接说明 ↗</a>
-        <label class="ai-field" for="aiProxyInput"><span>BAILIAN SECURE ROUTE</span><input id="aiProxyInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://你的百炼中转地址"></label>
-        <label class="ai-field" for="aiAccessTokenInput"><span>REVOCABLE ACCESS TOKEN</span><input id="aiAccessTokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴服务端访问口令"></label>
-        <p class="ai-route-note">这里填写的是可撤销访问口令，不是百炼 API Key。连接地址与口令只保存在这台手机，不进入学习备份。</p>
+        <p class="ai-setup-copy" id="aiSetupCopy">qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。</p>
+        <a class="ai-key-link" data-manual-ai href="https://help.aliyun.com/zh/model-studio/get-api-key" target="_blank" rel="noopener noreferrer">查看百炼安全连接说明 ↗</a>
+        <label class="ai-field" data-manual-ai for="aiProxyInput"><span>BAILIAN SECURE ROUTE</span><input id="aiProxyInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://你的百炼中转地址"></label>
+        <label class="ai-field" data-manual-ai for="aiAccessTokenInput"><span>REVOCABLE ACCESS TOKEN</span><input id="aiAccessTokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴服务端访问口令"></label>
+        <p class="ai-route-note" data-manual-ai>这里填写的是可撤销访问口令，不是百炼 API Key。连接地址与口令只保存在这台手机，不进入学习备份。</p>
         <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>我知道 AI 模式需要联网；本轮对话文字会经我的安全中转发送给阿里云百炼，动态语音也由百炼生成。请勿输入个人敏感信息。</span></label>
         <p class="ai-setup-status" id="aiSetupStatus" aria-live="polite"></p>
         <button class="button primary full" type="button" id="saveAiConnection">保存连接 · 进入场景 →</button>

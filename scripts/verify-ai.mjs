@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 await import("../ai-coach.js");
 const ai = globalThis.SayAi;
@@ -7,6 +9,20 @@ assert.equal(ai.PROVIDER, "阿里云百炼");
 assert.equal(ai.MODEL, "qwen3.7-plus");
 assert.equal(ai.VOICE_MODEL, "qwen-audio-3.0-tts-flash");
 assert.deepEqual(Object.keys(ai.SCENARIOS).sort(), ["cafe", "rescue", "shopping", "social", "travel", "work"]);
+
+const projectRoot = resolve(import.meta.dirname, "..");
+const [appSource, gradleSource, activitySource, nativeConfigSource, htmlSource] = await Promise.all([
+  readFile(resolve(projectRoot, "app.js"), "utf8"),
+  readFile(resolve(projectRoot, "android/app/build.gradle"), "utf8"),
+  readFile(resolve(projectRoot, "android/app/src/main/java/com/say01/english/MainActivity.java"), "utf8"),
+  readFile(resolve(projectRoot, "android/app/src/main/java/com/say01/english/SayAiConfigPlugin.java"), "utf8"),
+  readFile(resolve(projectRoot, "index.html"), "utf8")
+]);
+assert.ok(gradleSource.includes("ELEVEN_AI_PROXY_URL") && gradleSource.includes("ELEVEN_AI_ACCESS_TOKEN"));
+assert.ok(activitySource.includes("registerPlugin(SayAiConfigPlugin.class)"));
+assert.ok(nativeConfigSource.includes('@CapacitorPlugin(name = "SayAiConfig")'));
+assert.ok(appSource.includes("hydrateNativeAiConnection") && appSource.includes("aiConnectionManaged"));
+assert.ok(htmlSource.includes("data-manual-ai") && htmlSource.includes('id="aiSetupCopy"'));
 
 const normalized = ai.normalizeResponse({ reply_en: "  Sounds good!  ", reply_zh: " 好的！ " });
 assert.equal(normalized.reply_en, "Sounds good!");

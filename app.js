@@ -282,6 +282,8 @@ let roleChunks = [];
 let roleUrls = new Map();
 let roleReplaying = false;
 let roleCompletedLogged = false;
+let aiConnectionManaged = false;
+let nativeAiConfigPromise = null;
 let aiSettings = loadAiSettings();
 let aiSceneId = null;
 let aiHistory = [];
@@ -1049,17 +1051,52 @@ function loadAiSettings() {
   }
 }
 
+async function hydrateNativeAiConnection() {
+  if (!isNativeAndroid()) return false;
+  const plugin = window.Capacitor?.Plugins?.SayAiConfig;
+  if (!plugin?.get) return false;
+  try {
+    const config = await plugin.get();
+    const proxyUrl = String(config?.proxyUrl || "").trim().slice(0, 400);
+    const accessToken = String(config?.accessToken || "").trim().slice(0, 300);
+    if (!config?.configured || !window.SayAi?.proxyUrlAllowed(proxyUrl) || accessToken.length < 24) return false;
+    const persisted = loadAiSettings();
+    aiConnectionManaged = true;
+    aiSettings = { proxyUrl, accessToken, consent: persisted.consent === true };
+    renderAiConnectionStatus();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function ensureNativeAiConnection() {
+  if (!nativeAiConfigPromise) nativeAiConfigPromise = hydrateNativeAiConnection();
+  return nativeAiConfigPromise;
+}
+
 function aiIsConfigured() {
   return aiSettings.consent && window.SayAi?.proxyUrlAllowed(aiSettings.proxyUrl) && aiSettings.accessToken.length >= 24;
 }
 
 function saveAiSettings() {
-  localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(aiSettings));
+  const persisted = aiConnectionManaged
+    ? { proxyUrl: "", accessToken: "", consent: aiSettings.consent === true, managed: true }
+    : aiSettings;
+  localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(persisted));
   renderAiConnectionStatus();
 }
 
 function renderAiConnectionStatus() {
   if (!$("aiConnectionStatus")) return;
+  const configureButton = $("configureAiBtn");
+  const clearButton = $("clearAiConnection");
+  if (configureButton) configureButton.textContent = aiConnectionManaged ? "进入 AI" : "连接 / 更换";
+  if (clearButton) clearButton.hidden = aiConnectionManaged;
+  if (aiConnectionManaged && !aiSettings.consent) {
+    $("aiConnectionStatus").textContent = "AI 已准备好。首次进入时确认联网说明即可，不需要填写连接参数。";
+    return;
+  }
   if (!aiIsConfigured()) {
     $("aiConnectionStatus").textContent = "尚未连接。基础课程仍可完全离线使用。";
     return;
@@ -1069,7 +1106,8 @@ function renderAiConnectionStatus() {
   $("aiConnectionStatus").textContent = `已连接 ${window.SayAi?.PROVIDER || "百炼"} ${window.SayAi?.MODEL || "qwen3.7-plus"} · ${host}。基础课程仍可离线。`;
 }
 
-function openAiCoach(forceSetup = false) {
+async function openAiCoach(forceSetup = false) {
+  await ensureNativeAiConnection();
   cleanupRecording();
   cleanupRoleplay(false);
   aiSceneId = currentSceneId || nextPhraseRef().scene.id;
@@ -1077,7 +1115,7 @@ function openAiCoach(forceSetup = false) {
   $("app").inert = true;
   $("app").setAttribute("aria-hidden", "true");
   document.body.classList.add("modal-open");
-  if (forceSetup || !aiIsConfigured()) showAiSetup();
+  if ((!aiConnectionManaged && forceSetup) || !aiIsConfigured()) showAiSetup();
   else beginAiChat();
 }
 
@@ -1086,18 +1124,26 @@ function showAiSetup() {
   $("aiChat").hidden = true;
   $("aiRecap").hidden = true;
   $("aiTopScene").textContent = "连接 AI 陪练";
+  document.querySelectorAll("[data-manual-ai]").forEach(element => { element.hidden = aiConnectionManaged; });
+  $("aiOverlayTitle").innerHTML = aiConnectionManaged ? "AI 已就位，<br>现在开口。" : "连上百炼，<br>开始接话。";
+  $("aiSetupCopy").textContent = aiConnectionManaged
+    ? "十一说已经连好 qwen3.7-plus 和百炼少女声。你只需确认联网说明，之后直接进入现实场景。"
+    : "qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。";
+  $("saveAiConnection").textContent = aiConnectionManaged ? "同意联网 · 开始陪练 →" : "保存连接 · 进入场景 →";
   $("aiProxyInput").value = aiSettings.proxyUrl;
   $("aiAccessTokenInput").value = "";
   $("aiAccessTokenInput").placeholder = aiSettings.accessToken ? "本机已有访问口令；留空可继续使用" : "粘贴服务端访问口令";
   $("aiConsent").checked = aiSettings.consent;
-  $("aiSetupStatus").textContent = aiSettings.accessToken ? "本机已有可撤销访问口令；百炼 API Key 始终只在服务端。" : "";
+  $("aiSetupStatus").textContent = aiConnectionManaged
+    ? "连接已由十一说安全配置；长期百炼 API Key 不在安装包里。"
+    : (aiSettings.accessToken ? "本机已有可撤销访问口令；百炼 API Key 始终只在服务端。" : "");
 }
 
 function applyAiConnection() {
   const consent = $("aiConsent").checked;
-  const proxyUrl = $("aiProxyInput").value.trim();
+  const proxyUrl = aiConnectionManaged ? aiSettings.proxyUrl : $("aiProxyInput").value.trim();
   const enteredToken = $("aiAccessTokenInput").value.trim();
-  const accessToken = enteredToken || aiSettings.accessToken;
+  const accessToken = aiConnectionManaged ? aiSettings.accessToken : (enteredToken || aiSettings.accessToken);
   if (!consent) {
     $("aiSetupStatus").textContent = "请先确认联网和数据说明。";
     return;
@@ -1404,6 +1450,10 @@ function closeAiCoach() {
 }
 
 function clearAiConnection() {
+  if (aiConnectionManaged) {
+    toast("AI 已由十一说安全配置，不需要手动删除连接。");
+    return;
+  }
   if (!aiSettings.accessToken && !aiSettings.proxyUrl) {
     toast("本机没有保存 AI 连接。");
     return;
@@ -1907,6 +1957,7 @@ function initialize() {
   updateAll();
   setupOnboarding();
   setupServiceWorker();
+  void ensureNativeAiConnection();
   if ("speechSynthesis" in window) window.speechSynthesis.addEventListener?.("voiceschanged", selectVoice, { once: true });
 }
 

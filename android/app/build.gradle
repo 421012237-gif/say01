@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 
+def elevenAiProxyUrl = System.getenv('ELEVEN_AI_PROXY_URL') ?: ''
+def elevenAiAccessToken = System.getenv('ELEVEN_AI_ACCESS_TOKEN') ?: ''
+def javaStringLiteral = { String value ->
+    '"' + value
+        .replace('\\', '\\\\')
+        .replace('"', '\\"')
+        .replace('\r', '\\r')
+        .replace('\n', '\\n') + '"'
+}
+
 android {
     namespace = "com.say01.english"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -10,11 +20,16 @@ android {
         versionCode 20402
         versionName "2.4.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "ELEVEN_AI_PROXY_URL", javaStringLiteral(elevenAiProxyUrl)
+        buildConfigField "String", "ELEVEN_AI_ACCESS_TOKEN", javaStringLiteral(elevenAiAccessToken)
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+    }
+    buildFeatures {
+        buildConfig true
     }
     buildTypes {
         release {
