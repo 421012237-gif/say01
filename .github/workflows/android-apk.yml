@@ -52,6 +52,10 @@ jobs:
           mkdir -p "$HOME/.android"
           printf '%s' "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
           chmod 600 "$HOME/.android/debug.keystore"
+          EXPECTED_CERT="abb831763b8c11f6000b3cdc69cecae420f7dc1ea3d103592531f7d6548e4c56"
+          KEY_CERT="$(keytool -list -v -alias androiddebugkey -keystore "$HOME/.android/debug.keystore" -storepass android | sed -n 's/.*SHA256: //p' | head -1 | tr -d ':' | tr 'A-F' 'a-f')"
+          test "$EXPECTED_CERT" = "$KEY_CERT"
+          echo "Signing key matches the installed V2.5 update certificate."
 
       - name: Build installable debug APK
         working-directory: android
@@ -67,6 +71,7 @@ jobs:
           EXPECTED_CERT="abb831763b8c11f6000b3cdc69cecae420f7dc1ea3d103592531f7d6548e4c56"
           NEW_CERT="$("$APKSIGNER_PATH" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr 'A-F' 'a-f')"
           test -n "$NEW_CERT"
+          echo "Built APK certificate: $NEW_CERT"
           test "$EXPECTED_CERT" = "$NEW_CERT"
           echo "APK signature matches the installed V2.5 update certificate."
 
