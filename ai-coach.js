@@ -3,7 +3,7 @@
 
   const PROVIDER = "阿里云百炼";
   const MODEL = "qwen3.7-plus";
-  const VOICE_MODEL = "qwen-audio-3.0-tts-flash";
+  const VOICE_MODEL = "Kokoro-82M INT8 · af_sky";
 
   const SCENARIOS = {
     cafe: {
@@ -173,31 +173,6 @@
     return normalizeResponse(payload);
   }
 
-  async function requestSpeech({ settings, text, fetchImpl }) {
-    const fetcher = fetchImpl || global.fetch?.bind(global);
-    if (!fetcher) throw new Error("AI_FETCH_UNAVAILABLE");
-    const safeText = cleanText(text, 140);
-    if (!safeText) throw new Error("TTS_INPUT_EMPTY");
-    assertConnection(settings);
-
-    const response = await fetcher(settings.proxyUrl, {
-      method: "POST",
-      headers: connectionHeaders(settings),
-      body: JSON.stringify({ version: "2", action: "tts", text: safeText })
-    });
-    if (!response.ok) await readError(response, "TTS_HTTP");
-    const payload = await response.json();
-    const audioDataUrl = String(payload?.audioDataUrl || "");
-    if (!/^data:audio\/(?:mpeg|mp3|wav|ogg|opus);base64,[A-Za-z0-9+/=]+$/i.test(audioDataUrl) || audioDataUrl.length > 2500000) {
-      throw new Error("TTS_RESPONSE_INVALID");
-    }
-    return {
-      audioDataUrl,
-      voice: cleanText(payload?.voice, 100),
-      model: cleanText(payload?.model, 100) || VOICE_MODEL
-    };
-  }
-
   global.SayAi = Object.freeze({
     PROVIDER,
     MODEL,
@@ -208,7 +183,6 @@
     parseJsonText,
     extractQwenResponse,
     proxyUrlAllowed,
-    requestCoach,
-    requestSpeech
+    requestCoach
   });
 })(typeof window !== "undefined" ? window : globalThis);

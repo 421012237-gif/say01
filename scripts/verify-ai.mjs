@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 
 await import("../ai-coach.js");
@@ -7,22 +7,32 @@ const ai = globalThis.SayAi;
 
 assert.equal(ai.PROVIDER, "阿里云百炼");
 assert.equal(ai.MODEL, "qwen3.7-plus");
-assert.equal(ai.VOICE_MODEL, "qwen-audio-3.0-tts-flash");
+assert.equal(ai.VOICE_MODEL, "Kokoro-82M INT8 · af_sky");
 assert.deepEqual(Object.keys(ai.SCENARIOS).sort(), ["cafe", "rescue", "shopping", "social", "travel", "work"]);
 
 const projectRoot = resolve(import.meta.dirname, "..");
-const [appSource, gradleSource, activitySource, nativeConfigSource, htmlSource] = await Promise.all([
+const [appSource, gradleSource, activitySource, nativeConfigSource, localVoiceSource, htmlSource, modelStat, aarStat] = await Promise.all([
   readFile(resolve(projectRoot, "app.js"), "utf8"),
   readFile(resolve(projectRoot, "android/app/build.gradle"), "utf8"),
   readFile(resolve(projectRoot, "android/app/src/main/java/com/say01/english/MainActivity.java"), "utf8"),
   readFile(resolve(projectRoot, "android/app/src/main/java/com/say01/english/SayAiConfigPlugin.java"), "utf8"),
-  readFile(resolve(projectRoot, "index.html"), "utf8")
+  readFile(resolve(projectRoot, "android/app/src/main/java/com/say01/english/SayLocalVoicePlugin.java"), "utf8"),
+  readFile(resolve(projectRoot, "index.html"), "utf8"),
+  stat(resolve(projectRoot, "android/app/src/main/assets/kokoro-int8-en-v0_19/model.int8.onnx")),
+  stat(resolve(projectRoot, "android/app/libs/sherpa-onnx-1.13.6.aar"))
 ]);
 assert.ok(gradleSource.includes("ELEVEN_AI_PROXY_URL") && gradleSource.includes("ELEVEN_AI_ACCESS_TOKEN"));
+assert.ok(gradleSource.includes("sherpa-onnx-1.13.6") && gradleSource.includes("arm64-v8a"));
 assert.ok(activitySource.includes("registerPlugin(SayAiConfigPlugin.class)"));
+assert.ok(activitySource.includes("registerPlugin(SayLocalVoicePlugin.class)"));
 assert.ok(nativeConfigSource.includes('@CapacitorPlugin(name = "SayAiConfig")'));
+assert.ok(localVoiceSource.includes('@CapacitorPlugin(name = "SayLocalVoice")'));
+assert.ok(localVoiceSource.includes('VOICE = "af_sky"') && localVoiceSource.includes("SPEAKER_ID = 4"));
+assert.ok(modelStat.size > 100_000_000 && aarStat.size > 40_000_000);
 assert.ok(appSource.includes("hydrateNativeAiConnection") && appSource.includes("aiConnectionManaged"));
+assert.ok(appSource.includes("SayLocalVoice") && !appSource.includes("requestSpeech"));
 assert.ok(htmlSource.includes("data-manual-ai") && htmlSource.includes('id="aiSetupCopy"'));
+assert.ok(htmlSource.includes('id="testLocalVoice"'));
 
 const normalized = ai.normalizeResponse({ reply_en: "  Sounds good!  ", reply_zh: " 好的！ " });
 assert.equal(normalized.reply_en, "Sounds good!");
@@ -71,18 +81,6 @@ assert.equal(coachRequest.options.headers.Authorization, `Bearer ${settings.acce
 assert.equal(JSON.parse(coachRequest.options.body).action, "coach");
 assert.equal(coachResponse.hint_en, "Iced, please.");
 
-let ttsRequest;
-const speech = await ai.requestSpeech({
-  settings,
-  text: "Hot or iced?",
-  fetchImpl: async (url, options) => {
-    ttsRequest = { url, options };
-    return { ok: true, json: async () => ({ audioDataUrl: "data:audio/mpeg;base64,SUQz", voice: "longanhuan_v3.6" }) };
-  }
-});
-assert.equal(JSON.parse(ttsRequest.options.body).action, "tts");
-assert.equal(speech.voice, "longanhuan_v3.6");
-
 assert.equal(ai.proxyUrlAllowed("https://say01.cn-beijing.fcapp.run"), true);
 assert.equal(ai.proxyUrlAllowed("https://api.example.com/say01"), true);
 assert.equal(ai.proxyUrlAllowed("http://api.example.com/say01"), false);
@@ -105,4 +103,4 @@ await assert.rejects(
   /AI_ACCESS_TOKEN_MISSING/
 );
 
-console.log("AI client verification passed: Bailian model, proxy auth, Qwen JSON, TTS data, HTTPS policy, and errors.");
+console.log("AI client verification passed: Bailian text model, proxy auth, Qwen JSON, embedded Kokoro girl voice, HTTPS policy, and errors.");

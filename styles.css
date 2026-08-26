@@ -1171,6 +1171,9 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
 .ai-consent input { width: 22px; min-height: 22px; accent-color: var(--acid); }
 .ai-setup-status, .ai-status { min-height: 20px; color: var(--acid); font-size: 11px; line-height: 1.45; }
 .ai-setup > .button { margin-top: 8px; border-radius: 999px; box-shadow: none; }
+.ai-setup > .ai-local-voice-test { margin-top: 20px; border-color: rgba(255,43,214,.64); color: var(--acid); }
+.ai-setup > .ai-local-voice-test.playing { background: var(--acid); color: #08070a; box-shadow: 0 0 24px rgba(255,43,214,.22); }
+.ai-local-voice-note { margin: 7px 4px 18px; color: var(--muted); font: 800 8px/1.5 "Arial Narrow", Arial, sans-serif; letter-spacing: .08em; }
 
 .ai-chat { padding: 38px 0 8px; }
 .ai-scene-intro { position: relative; min-height: 155px; padding: 13px 36% 26px 0; border-top: 1px solid var(--acid); }

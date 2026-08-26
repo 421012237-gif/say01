@@ -1,6 +1,4 @@
 export const CHAT_MODEL = "qwen3.7-plus";
-export const TTS_MODEL = "qwen-audio-3.0-tts-flash";
-export const TTS_VOICE = "longanhuan_v3.6";
 
 const SCENARIOS = {
   cafe: {
@@ -157,24 +155,4 @@ export function extractQwenCoachResponse(payload) {
   const text = Array.isArray(content) ? content.map(part => part?.text || "").join("") : String(content || "");
   if (!text) throw new Error("UPSTREAM_RESPONSE_EMPTY");
   return normalizeCoachResponse(parseJsonText(text));
-}
-
-export function buildTtsRequest(text, options = {}) {
-  const safeText = cleanText(text, 140);
-  if (!safeText) throw new Error("TTS_INPUT_EMPTY");
-  return {
-    model: TTS_MODEL,
-    input: {
-      text: safeText,
-      voice: cleanText(options.voice || TTS_VOICE, 100),
-      format: "mp3",
-      sample_rate: 24000,
-      volume: 58,
-      rate: 0.96,
-      pitch: 1.06,
-      language_hints: ["en"],
-      instruction: "Use a youthful adult female voice: sweet, warm, lively, natural and emotionally expressive. Speak clear conversational American English with gentle intonation and no robotic rhythm.",
-      enable_aigc_tag: true
-    }
-  };
 }

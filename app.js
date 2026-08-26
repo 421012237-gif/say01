@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.2";
+const APP_VERSION = "2.4.3";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";
@@ -291,7 +291,7 @@ let aiTurnCount = 0;
 let aiLastResult = null;
 let aiBusy = false;
 let aiRecognition = null;
-let activeAiAudio = null;
+let activeAiVoiceButton = null;
 let aiVoiceAvailable = null;
 let currentAiReviewId = null;
 let deferredInstall = null;
@@ -1127,8 +1127,13 @@ function showAiSetup() {
   document.querySelectorAll("[data-manual-ai]").forEach(element => { element.hidden = aiConnectionManaged; });
   $("aiOverlayTitle").innerHTML = aiConnectionManaged ? "AI 已就位，<br>现在开口。" : "连上百炼，<br>开始接话。";
   $("aiSetupCopy").textContent = aiConnectionManaged
-    ? "十一说已经连好 qwen3.7-plus 和百炼少女声。你只需确认联网说明，之后直接进入现实场景。"
-    : "qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。";
+    ? "十一说已经连好 qwen3.7-plus；Mia 少女声直接在手机本地生成。你只需确认联网说明，之后直接进入现实场景。"
+    : "qwen3.7-plus 负责接话，Mia 少女声在手机本地生成。长期 API Key 只放在你的服务端，不进入网页或 APK。";
+  const voiceTestButton = $("testLocalVoice");
+  const localVoiceReady = Boolean(localAiVoicePlugin()?.speak);
+  voiceTestButton.disabled = !localVoiceReady;
+  voiceTestButton.dataset.idleLabel = localVoiceReady ? "▶ 先试听本地 Mia 少女声" : "本地少女声仅 Android APK 可用";
+  voiceTestButton.textContent = voiceTestButton.dataset.idleLabel;
   $("saveAiConnection").textContent = aiConnectionManaged ? "同意联网 · 开始陪练 →" : "保存连接 · 进入场景 →";
   $("aiProxyInput").value = aiSettings.proxyUrl;
   $("aiAccessTokenInput").value = "";
@@ -1213,38 +1218,56 @@ function appendAiBubble(role, english, chinese = "") {
   return bubble;
 }
 
-function stopAiVoice() {
-  if (!activeAiAudio) return;
-  activeAiAudio.pause();
-  activeAiAudio.src = "";
-  activeAiAudio = null;
-  document.querySelectorAll(".ai-voice-button.playing").forEach(button => {
-    button.classList.remove("playing");
-    button.textContent = "▶ 听 Mia 少女声";
-  });
+function localAiVoicePlugin() {
+  return window.Capacitor?.Plugins?.SayLocalVoice || null;
 }
 
-async function playAiVoice(audioDataUrl, button, automatic = false) {
-  stopAiVoice();
-  const audio = new Audio(audioDataUrl);
-  activeAiAudio = audio;
+function resetAiVoiceButton(button) {
+  if (!button) return;
+  button.classList.remove("playing");
+  button.textContent = button.dataset.idleLabel || "▶ 再听一次";
+}
+
+async function stopAiVoice() {
+  const plugin = localAiVoicePlugin();
+  try { await plugin?.stop?.(); } catch {}
+  activeAiVoiceButton = null;
+  document.querySelectorAll(".ai-voice-button.playing").forEach(button => {
+    resetAiVoiceButton(button);
+  });
+  const setupButton = $("testLocalVoice");
+  if (setupButton?.classList.contains("playing")) resetAiVoiceButton(setupButton);
+}
+
+async function playAiVoice(english, button, automatic = false) {
+  const plugin = localAiVoicePlugin();
+  if (!plugin?.speak) {
+    button.disabled = true;
+    button.textContent = "本地少女声仅 Android APK 可用";
+    return;
+  }
+  await stopAiVoice();
+  activeAiVoiceButton = button;
   button.classList.add("playing");
-  button.textContent = "正在播放 Mia…";
+  button.textContent = "Mia 正在本地准备…";
   const finish = () => {
-    if (activeAiAudio === audio) activeAiAudio = null;
-    button.classList.remove("playing");
-    button.textContent = "▶ 再听一次";
-  };
-  audio.onended = finish;
-  audio.onerror = () => {
-    finish();
-    button.textContent = "声音加载失败 · 点我重试";
+    if (activeAiVoiceButton !== button) return;
+    activeAiVoiceButton = null;
+    button.dataset.idleLabel = "▶ 再听一次本地少女声";
+    resetAiVoiceButton(button);
   };
   try {
-    await audio.play();
-  } catch (error) {
+    const result = await plugin.speak({ text: english, speed: 0.96 });
+    if (result?.ok === false && activeAiVoiceButton === button) {
+      finish();
+      return;
+    }
     finish();
-    button.textContent = automatic ? "▶ 点一下听 Mia 少女声" : "▶ 再点一次播放";
+  } catch (error) {
+    if (activeAiVoiceButton === button) {
+      finish();
+      button.textContent = automatic ? "▶ 点一下重试本地少女声" : "本地少女声加载失败 · 点我重试";
+    }
     if (!automatic) throw error;
   }
 }
@@ -1253,35 +1276,20 @@ function addAiVoiceControl(bubble, english) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "ai-voice-button";
-  if (aiVoiceAvailable === false) {
-    button.textContent = "少女声尚未配置";
+  if (!localAiVoicePlugin()?.speak) {
+    aiVoiceAvailable = false;
+    button.textContent = "本地少女声仅 Android APK 可用";
     button.disabled = true;
     bubble.appendChild(button);
     return;
   }
-  button.textContent = "Mia 少女声加载中…";
-  button.disabled = true;
+  aiVoiceAvailable = true;
+  button.dataset.idleLabel = "▶ 听 Mia 本地少女声";
+  button.textContent = button.dataset.idleLabel;
+  button.disabled = false;
   bubble.appendChild(button);
-  window.SayAi.requestSpeech({ settings: aiSettings, text: english })
-    .then(result => {
-      if (!bubble.isConnected) return;
-      aiVoiceAvailable = true;
-      button.disabled = false;
-      button.textContent = "▶ 听 Mia 少女声";
-      button.addEventListener("click", () => playAiVoice(result.audioDataUrl, button).catch(() => {}));
-      playAiVoice(result.audioDataUrl, button, true).catch(() => {});
-    })
-    .catch(error => {
-      if (!bubble.isConnected) return;
-      const message = String(error?.message || "");
-      if (message.includes("TTS_HTTP_501") || message.includes("TTS_HTTP_503") || message.includes("TTS_NOT_CONFIGURED")) {
-        aiVoiceAvailable = false;
-        button.textContent = "少女声尚未配置";
-      } else {
-        button.textContent = "少女声暂时没接上";
-      }
-      button.disabled = true;
-    });
+  button.addEventListener("click", () => playAiVoice(english, button).catch(() => {}));
+  playAiVoice(english, button, true).catch(() => {});
 }
 
 function setAiBusy(busy) {
@@ -1888,6 +1896,10 @@ function bindEvents() {
   $("closeAiCoach").addEventListener("click", closeAiCoach);
   $("cancelAiSetup").addEventListener("click", closeAiCoach);
   $("saveAiConnection").addEventListener("click", applyAiConnection);
+  $("testLocalVoice").addEventListener("click", event => {
+    const button = event.currentTarget;
+    playAiVoice("Hey! I'm Mia. Ready to make English feel natural?", button).catch(() => {});
+  });
   $("aiSendBtn").addEventListener("click", submitAiTurn);
   $("aiMicBtn").addEventListener("click", startAiSpeechRecognition);
   $("aiHintBtn").addEventListener("click", showAiHint);

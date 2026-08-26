@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.4.2">
+  <link rel="stylesheet" href="styles.css?v=2.4.3">
   <title>十一说｜先开口，自然记住</title>
 </head>
 <body>
@@ -92,12 +92,14 @@
         <div class="ai-orbit" aria-hidden="true"><span>AI</span></div>
         <p class="kicker">BAILIAN / PRIVATE ROUTE</p>
         <h2 id="aiOverlayTitle">连上百炼，<br>开始接话。</h2>
-        <p class="ai-setup-copy" id="aiSetupCopy">qwen3.7-plus 负责接话，百炼少女声负责朗读。长期 API Key 只放在你的服务端，不进入网页或 APK。</p>
+        <p class="ai-setup-copy" id="aiSetupCopy">qwen3.7-plus 负责接话，Mia 少女声在手机本地生成。长期 API Key 只放在你的服务端，不进入网页或 APK。</p>
+        <button class="button light full ai-local-voice-test" type="button" id="testLocalVoice">▶ 先试听本地 Mia 少女声</button>
+        <p class="ai-local-voice-note">OFFLINE VOICE · 断网也能发声，不调用云语音，不回退系统男声。</p>
         <a class="ai-key-link" data-manual-ai href="https://help.aliyun.com/zh/model-studio/get-api-key" target="_blank" rel="noopener noreferrer">查看百炼安全连接说明 ↗</a>
         <label class="ai-field" data-manual-ai for="aiProxyInput"><span>BAILIAN SECURE ROUTE</span><input id="aiProxyInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://你的百炼中转地址"></label>
         <label class="ai-field" data-manual-ai for="aiAccessTokenInput"><span>REVOCABLE ACCESS TOKEN</span><input id="aiAccessTokenInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴服务端访问口令"></label>
         <p class="ai-route-note" data-manual-ai>这里填写的是可撤销访问口令，不是百炼 API Key。连接地址与口令只保存在这台手机，不进入学习备份。</p>
-        <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>我知道 AI 模式需要联网；本轮对话文字会经我的安全中转发送给阿里云百炼，动态语音也由百炼生成。请勿输入个人敏感信息。</span></label>
+        <label class="ai-consent"><input id="aiConsent" type="checkbox"><span>我知道 AI 接话需要联网；本轮对话文字会经我的安全中转发送给阿里云百炼。英文回复的朗读只在本机离线生成。请勿输入个人敏感信息。</span></label>
         <p class="ai-setup-status" id="aiSetupStatus" aria-live="polite"></p>
         <button class="button primary full" type="button" id="saveAiConnection">保存连接 · 进入场景 →</button>
         <button class="text-button full" type="button" id="cancelAiSetup">暂时不用 AI</button>
@@ -120,7 +122,7 @@
             <button class="button light" type="button" id="aiHintBtn">给我一点提示</button>
             <button class="button acid-button" type="button" id="aiSendBtn">发出去 →</button>
           </div>
-          <p class="ai-status" id="aiStatus" aria-live="polite">AI 回复会尝试使用百炼 Mia 少女声；失败时只显示文字，不回退系统男声。</p>
+          <p class="ai-status" id="aiStatus" aria-live="polite">AI 文字由百炼生成；Mia 少女声只在手机本地合成，不回退系统男声。</p>
         </div>
         <button class="ai-finish" type="button" id="finishAiSession">结束这轮 · 收进记忆</button>
       </section>
@@ -283,7 +285,7 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="ai-coach.js?v=2.4.2" defer></script>
-  <script src="app.js?v=2.4.2" defer></script>
+  <script src="ai-coach.js?v=2.4.3" defer></script>
+  <script src="app.js?v=2.4.3" defer></script>
 </body>
 </html>

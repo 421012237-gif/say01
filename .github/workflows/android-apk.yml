@@ -30,6 +30,9 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Restore official offline Mia voice assets
+        run: ./scripts/fetch-local-voice-assets.sh
+
       - name: Verify brand, AI coach and bundled audio
         run: |
           npm run verify:brand
@@ -51,7 +54,7 @@ jobs:
       - name: Upload Eleven Says APK
         uses: actions/upload-artifact@v7
         with:
-          name: ElevenSays-Android-V2.4.2-BAILIAN-AI-LIVE
+          name: ElevenSays-Android-V2.4.3-LOCAL-MIA-VOICE
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30

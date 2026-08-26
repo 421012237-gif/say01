@@ -17,8 +17,11 @@ android {
         applicationId "com.say01.english"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 20402
-        versionName "2.4.2"
+        versionCode 20403
+        versionName "2.4.3"
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "ELEVEN_AI_PROXY_URL", javaStringLiteral(elevenAiProxyUrl)
         buildConfigField "String", "ELEVEN_AI_ACCESS_TOKEN", javaStringLiteral(elevenAiAccessToken)
@@ -47,6 +50,8 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation(name: 'sherpa-onnx-1.13.6', ext: 'aar')
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.20'
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"

@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SayAudioPlugin.class);
         registerPlugin(SayAiConfigPlugin.class);
+        registerPlugin(SayLocalVoicePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
