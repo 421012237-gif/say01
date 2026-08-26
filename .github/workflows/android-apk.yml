@@ -33,28 +33,50 @@ jobs:
       - name: Restore official offline Mia voice assets
         run: ./scripts/fetch-local-voice-assets.sh
 
-      - name: Verify brand, AI coach and bundled audio
+      - name: Verify brand, AI coach, learning flow and bundled audio
         run: |
           npm run verify:brand
           npm run verify:ai
           npm run verify:audio
+          npm run verify:speech
+          npm run verify:learning
 
       - name: Sync bundled web app into Android
         run: npm run sync:android
 
+      - name: Restore update-compatible signing key
+        env:
+          ANDROID_DEBUG_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_DEBUG_KEYSTORE_BASE64"
+          mkdir -p "$HOME/.android"
+          printf '%s' "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+
       - name: Build installable debug APK
         working-directory: android
+        env:
+          ELEVEN_AI_PROXY_URL: ${{ secrets.ELEVEN_AI_PROXY_URL }}
+          ELEVEN_AI_ACCESS_TOKEN: ${{ secrets.ELEVEN_AI_ACCESS_TOKEN }}
         run: ./gradlew assembleDebug
 
-      - name: Verify APK signature
+      - name: Verify APK signature and upgrade compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
           "$APKSIGNER_PATH" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p previous-apk
+          gh release download v2.5.0-private-test-20260826 --pattern '*.apk' --dir previous-apk
+          OLD_CERT="$("$APKSIGNER_PATH" verify --print-certs previous-apk/*.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          NEW_CERT="$("$APKSIGNER_PATH" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
+          test -n "$OLD_CERT"
+          test "$OLD_CERT" = "$NEW_CERT"
 
       - name: Upload Eleven Says APK
         uses: actions/upload-artifact@v7
         with:
-          name: ElevenSays-Android-V2.5.0-SPEECH-CHECK-PRIVATE-TEST
+          name: ElevenSays-Android-V2.6.0-REAL-ABILITY-PRIVATE-TEST
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30

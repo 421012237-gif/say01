@@ -2,12 +2,14 @@ package com.say01.english;
 
 import android.Manifest;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.provider.Settings;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -53,6 +55,23 @@ public class SaySpeechCheckPlugin extends Plugin {
             return;
         }
         startRecognition(call);
+    }
+
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        mainHandler.post(() -> {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(intent);
+                JSObject result = new JSObject();
+                result.put("ok", true);
+                call.resolve(result);
+            } catch (RuntimeException error) {
+                call.reject("APP_SETTINGS_UNAVAILABLE", error);
+            }
+        });
     }
 
     @PermissionCallback
@@ -128,13 +147,20 @@ public class SaySpeechCheckPlugin extends Plugin {
                 }
             });
 
-            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag());
-            intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
-            intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
-            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the English sentence");
-            recognizer.startListening(intent);
+            try {
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag());
+                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, Math.max(1, Math.min(5, call.getInt("maxResults", 1))));
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the English sentence");
+                recognizer.startListening(intent);
+            } catch (RuntimeException error) {
+                PluginCall pending = activeCall;
+                cleanupRecognizer(true);
+                if (pending != null) pending.reject("SPEECH_RECOGNIZER_START_FAILED", error);
+                return;
+            }
 
             timeoutTask = () -> {
                 PluginCall pending = activeCall;

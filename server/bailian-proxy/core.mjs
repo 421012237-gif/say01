@@ -91,7 +91,9 @@ export function validateCoachPayload(payload) {
   const memories = Array.isArray(payload.memories)
     ? payload.memories.slice(-5).map(item => ({ en: cleanText(item?.en, 90), zh: cleanText(item?.zh, 90) })).filter(item => item.en)
     : [];
-  return { sceneId, userText, history, memories };
+  const allowedInterests = new Set(["trends", "music", "creative", "daily"]);
+  const interest = cleanText(payload.learnerProfile?.interest, 30);
+  return { sceneId, userText, history, memories, interest: allowedInterests.has(interest) ? interest : "daily" };
 }
 
 function responseSchema() {
@@ -119,10 +121,12 @@ function memoryBlock(memories) {
 export function buildQwenRequest(input) {
   const safe = validateCoachPayload(input);
   const scenario = SCENARIOS[safe.sceneId];
+  const interestLabel = { trends: "streetwear, sneakers and fashion", music: "music, live events and nightlife", creative: "art, exhibitions and creative work", daily: "ordinary real life" }[safe.interest];
   const system = [
     "You are MIA inside 十一说 (ELEVEN SAYS), an English speaking coach for an adult Chinese learner at CEFR pre-A1/A1.",
     `Stay in role as ${scenario.role}.`,
     `Scene goal: ${scenario.goal}`,
+    `Learner interest: ${interestLabel}. Use it lightly only when it naturally fits the current scene.`,
     "Make this feel like a real, warm conversation, not a quiz and not a lecture.",
     "Rules:",
     "1. Reply to the learner's meaning with ONE natural American-English sentence of 3-10 words.",

@@ -71,6 +71,7 @@ const coachResponse = await ai.requestCoach({
   history: [],
   userText: "Coffee please",
   memories: [],
+  learnerProfile: { interest: "trends" },
   fetchImpl: async (url, options) => {
     coachRequest = { url, options };
     return { ok: true, json: async () => qwenPayload };
@@ -79,7 +80,9 @@ const coachResponse = await ai.requestCoach({
 assert.equal(coachRequest.url, settings.proxyUrl);
 assert.equal(coachRequest.options.headers.Authorization, `Bearer ${settings.accessToken}`);
 assert.equal(JSON.parse(coachRequest.options.body).action, "coach");
+assert.equal(JSON.parse(coachRequest.options.body).learnerProfile.interest, "trends");
 assert.equal(coachResponse.hint_en, "Iced, please.");
+assert.equal(ai.connectionHeaders(settings).Authorization, `Bearer ${settings.accessToken}`);
 
 assert.equal(ai.proxyUrlAllowed("https://say01.cn-beijing.fcapp.run"), true);
 assert.equal(ai.proxyUrlAllowed("https://api.example.com/say01"), true);

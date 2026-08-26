@@ -10,7 +10,8 @@ const clientPayload = {
   sceneId: "cafe",
   history: [{ role: "model", text: "What can I get for you?" }],
   userText: "Coffee please",
-  memories: [{ en: "No sugar, please.", zh: "请不要糖。" }]
+  memories: [{ en: "No sugar, please.", zh: "请不要糖。" }],
+  learnerProfile: { interest: "trends" }
 };
 
 const request = buildQwenRequest(clientPayload);
@@ -20,6 +21,7 @@ assert.equal(request.response_format.type, "json_schema");
 assert.equal(request.response_format.json_schema.strict, true);
 assert.match(request.messages[0].content, /Correct at most ONE/);
 assert.match(request.messages[0].content, /No sugar, please/);
+assert.match(request.messages[0].content, /streetwear, sneakers and fashion/);
 assert.equal(request.messages.at(-1).content, "Coffee please");
 
 const resultBody = {
@@ -46,6 +48,8 @@ const config = readConfig({
 assert.match(config.chatUrl, /chat\/completions$/);
 assert.ok(config.allowedOrigins.has("http://localhost"));
 assert.equal(Object.hasOwn(config, "ttsUrl"), false);
+assert.equal(config.requestsPerDay, 60);
+assert.equal(config.tokensPerDay, 120000);
 
 let chatCall;
 const coach = await callCoach(clientPayload, config, async (url, options) => {
@@ -53,7 +57,9 @@ const coach = await callCoach(clientPayload, config, async (url, options) => {
   return new Response(JSON.stringify(qwenPayload), { status: 200, headers: { "Content-Type": "application/json" } });
 });
 assert.equal(coach.reply_en, "Hot or iced?");
+assert.deepEqual(coach.__usage, { input: 500, output: 80 });
+assert.equal(Object.keys(coach).includes("__usage"), false);
 assert.equal(chatCall.options.headers.Authorization, "Bearer sk-test-only");
 assert.equal(JSON.parse(chatCall.options.body).model, CHAT_MODEL);
 
-console.log("Bailian proxy verification passed: fixed text model, JSON Schema, auth config, and coach call; speech stays on-device.");
+console.log("Bailian proxy verification passed: fixed text model, interest context, JSON Schema, auth, usage metering, and daily limits; speech stays on-device.");

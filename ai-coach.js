@@ -148,7 +148,7 @@
     if (cleanText(settings?.accessToken, 300).length < 24) throw new Error("AI_ACCESS_TOKEN_MISSING");
   }
 
-  async function requestCoach({ settings, sceneId, history, userText, memories, fetchImpl }) {
+  async function requestCoach({ settings, sceneId, history, userText, memories, learnerProfile, fetchImpl }) {
     const fetcher = fetchImpl || global.fetch?.bind(global);
     if (!fetcher) throw new Error("AI_FETCH_UNAVAILABLE");
     const safeText = cleanText(userText, 180);
@@ -164,7 +164,8 @@
         sceneId,
         history: (history || []).slice(-10),
         userText: safeText,
-        memories: (memories || []).slice(-5)
+        memories: (memories || []).slice(-5),
+        learnerProfile: { interest: cleanText(learnerProfile?.interest, 30) }
       })
     });
     if (!response.ok) await readError(response);
@@ -183,6 +184,7 @@
     parseJsonText,
     extractQwenResponse,
     proxyUrlAllowed,
+    connectionHeaders,
     requestCoach
   });
 })(typeof window !== "undefined" ? window : globalThis);

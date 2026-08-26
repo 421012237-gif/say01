@@ -14,6 +14,8 @@
 - `SAY01_ACCESS_TOKEN`：至少 24 位的随机口令；手机只保存这个可撤销口令
 - `SAY01_ALLOWED_ORIGINS`：允许调用的网页/Android WebView Origin，以英文逗号分隔
 - `SAY01_REQUESTS_PER_MINUTE`：单实例、单 IP 每分钟上限，默认 30
+- `SAY01_REQUESTS_PER_DAY`：单实例每日成功请求上限，默认 60
+- `SAY01_TOKENS_PER_DAY`：单实例每日已用 Token 上限，默认 120000
 
 ## 运行方式
 
@@ -38,6 +40,7 @@ node server/bailian-proxy/server.mjs
 - 文字模型固定，客户端不能自行改成其他模型
 - 对话、历史和记忆条数均有长度上限
 - 严格来源检查、Bearer 口令、请求体上限、单 IP 限频和无缓存响应
+- App 本机每天最多 20 个成功 AI 回合；中转另设每日请求和 Token 保护
 - 日志只记录模型、Token 数量和错误码，不记录用户对话原文
 - 服务端不接收语音合成请求；英文回复只在 Android 本机离线朗读
 

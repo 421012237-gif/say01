@@ -111,12 +111,12 @@
   function evaluate(targetText, transcripts, options = {}) {
     const choices = (Array.isArray(transcripts) ? transcripts : [transcripts]).filter(value => String(value || "").trim());
     if (!choices.length) return evaluateOne(targetText, "", options);
-    return choices
-      .map(transcript => evaluateOne(targetText, transcript, options))
-      .sort((a, b) => {
-        const outcomeRank = { pass: 4, understood: 3, almost: 2, retry: 1 };
-        return (outcomeRank[b.outcome] - outcomeRank[a.outcome]) || (b.contentScore - a.contentScore) || (b.score - a.score);
-      })[0];
+    // 默认只相信系统第一候选，避免从多个候选中挑最像标准答案的一项造成乐观误判。
+    if (!options.chooseBestAlternative) return evaluateOne(targetText, choices[0], options);
+    return choices.map(transcript => evaluateOne(targetText, transcript, options)).sort((a, b) => {
+      const outcomeRank = { pass: 4, understood: 3, almost: 2, retry: 1 };
+      return (outcomeRank[b.outcome] - outcomeRank[a.outcome]) || (b.contentScore - a.contentScore) || (b.score - a.score);
+    })[0];
   }
 
   const api = { tokenize, evaluate };

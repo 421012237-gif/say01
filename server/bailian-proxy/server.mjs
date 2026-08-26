@@ -37,7 +37,9 @@ export function readConfig(env = process.env) {
     accessToken,
     chatUrl: `${baseUrl}/chat/completions`,
     allowedOrigins: new Set(origins.length ? origins : DEFAULT_ORIGINS),
-    requestsPerMinute: Math.min(120, Math.max(10, Number(env.SAY01_REQUESTS_PER_MINUTE) || 30))
+    requestsPerMinute: Math.min(120, Math.max(10, Number(env.SAY01_REQUESTS_PER_MINUTE) || 30)),
+    requestsPerDay: Math.min(500, Math.max(20, Number(env.SAY01_REQUESTS_PER_DAY) || 60)),
+    tokensPerDay: Math.min(2000000, Math.max(20000, Number(env.SAY01_TOKENS_PER_DAY) || 120000))
   };
 }
 
@@ -105,6 +107,7 @@ export async function callCoach(payload, config, fetchImpl = fetch) {
   const result = extractQwenCoachResponse(upstream);
   const usage = upstream?.usage || {};
   console.info(JSON.stringify({ event: "coach", model: CHAT_MODEL, inputTokens: usage.prompt_tokens || 0, outputTokens: usage.completion_tokens || 0 }));
+  Object.defineProperty(result, "__usage", { value: { input: Number(usage.prompt_tokens) || 0, output: Number(usage.completion_tokens) || 0 }, enumerable: false });
   return result;
 }
 
@@ -123,7 +126,14 @@ function rateAllowed(store, key, limit, now = Date.now()) {
   return current.count <= limit;
 }
 
-export function createHandler(config, { fetchImpl = fetch, rateStore = new Map() } = {}) {
+function dailyBudget(store, now = Date.now()) {
+  const day = new Date(now).toISOString().slice(0, 10);
+  const current = store.get(day) || { requests: 0, tokens: 0 };
+  store.set(day, current);
+  return current;
+}
+
+export function createHandler(config, { fetchImpl = fetch, rateStore = new Map(), dailyStore = new Map() } = {}) {
   return async function handler(request, response) {
     const origin = String(request.headers.origin || "");
     const allowedOrigin = origin && config.allowedOrigins.has(origin) ? origin : "";
@@ -143,16 +153,21 @@ export function createHandler(config, { fetchImpl = fetch, rateStore = new Map()
       return json(response, 401, { error: "ACCESS_DENIED" }, allowedOrigin);
     }
     if (request.method === "GET") {
-      return json(response, 200, { ok: true, provider: "aliyun-bailian", model: CHAT_MODEL, voice: "local-kokoro-client" }, allowedOrigin);
+      const daily = dailyBudget(dailyStore);
+      return json(response, 200, { ok: true, provider: "aliyun-bailian", model: CHAT_MODEL, voice: "local-kokoro-client", daily: { requests: daily.requests, requestLimit: config.requestsPerDay, tokens: daily.tokens, tokenLimit: config.tokensPerDay } }, allowedOrigin);
     }
     if (request.method !== "POST") return json(response, 405, { error: "METHOD_NOT_ALLOWED" }, allowedOrigin);
     if (!rateAllowed(rateStore, clientAddress(request), config.requestsPerMinute)) return json(response, 429, { error: "RATE_LIMITED" }, allowedOrigin);
+    const daily = dailyBudget(dailyStore);
+    if (daily.requests >= config.requestsPerDay || daily.tokens >= config.tokensPerDay) return json(response, 429, { error: "DAILY_BUDGET_REACHED" }, allowedOrigin);
 
     try {
       const payload = await readJsonBody(request);
       if (payload?.version !== "2") return json(response, 400, { error: "VERSION_UNSUPPORTED" }, allowedOrigin);
       if (payload.action === "coach") {
         const result = await callCoach(payload, config, fetchImpl);
+        daily.requests += 1;
+        daily.tokens += Number(result.__usage?.input || 0) + Number(result.__usage?.output || 0);
         return json(response, 200, result, allowedOrigin);
       }
       return json(response, 400, { error: "ACTION_INVALID" }, allowedOrigin);

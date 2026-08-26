@@ -1,9 +1,38 @@
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "2.6.0";
+const BUILD_DATE = "2026-08-26";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
 const AI_SETTINGS_KEY = "say01-ai-connection-v1";
 const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
-const DAILY_TARGETS = { 3: 3, 5: 5, 10: 8 };
+const DAILY_TARGETS = { 3: 1, 5: 2, 10: 3 };
+const STAGE = Object.freeze({ NEW: 0, HEARD: 1, IMITATED: 2, RECALLED: 3, VARIED: 4 });
+const INTEREST_LABELS = Object.freeze({ trends: "潮流穿搭", music: "音乐夜生活", creative: "创意展览", daily: "真实日常" });
+const APP_AI_DAILY_LIMIT = 20;
+
+// 变化表达只用于用户真正会说的话。通过目标句后，再替换一个现实信息。
+const PHRASE_VARIATIONS = {
+  "cafe-2": { en: "A tea, please.", zh: "请给我一杯茶。", hint: "把 coffee 换成 tea" },
+  "cafe-4": { en: "Hot, please. No sugar.", zh: "请给我热的，不要糖。", hint: "把 iced 换成 hot" },
+  "cafe-5": { en: "That's all. Thanks.", zh: "就这些，谢谢。", hint: "用更短的 thanks 收尾" },
+  "travel-1": { en: "Excuse me. Where is the bus stop?", zh: "不好意思，公交站在哪里？", hint: "把 station 换成 bus stop" },
+  "travel-3": { en: "Thanks for your help.", zh: "谢谢你的帮助。", hint: "把 Thank you 换成 Thanks" },
+  "travel-4": { en: "Two tickets, please.", zh: "请给我两张票。", hint: "把 one 换成 two" },
+  "travel-5": { en: "How much are they?", zh: "这些多少钱？", hint: "从一个物品换成多个" },
+  "social-1": { en: "Hey. I'm {name}.", zh: "嗨，我是{name}。", hint: "把 Hi 换成更轻松的 Hey" },
+  "social-3": { en: "What city are you from?", zh: "你来自哪个城市？", hint: "把 where 换成具体问城市" },
+  "social-5": { en: "I'm learning English online.", zh: "我正在网上学英语。", hint: "多加一个 online" },
+  "shopping-1": { en: "Excuse me. Do you have this in pink?", zh: "不好意思，这款有粉色的吗？", hint: "把 black 换成你喜欢的 pink" },
+  "shopping-3": { en: "Large, please.", zh: "请给我大码。", hint: "把 medium 换成 large" },
+  "shopping-4": { en: "How much are these?", zh: "这些多少钱？", hint: "从一个商品换成多个" },
+  "shopping-5": { en: "I think I'll take it.", zh: "我想我要了。", hint: "加上 I think，让决定更自然" },
+  "work-1": { en: "Hey. I'm {name}. I just joined.", zh: "嗨，我是{name}，我刚加入。", hint: "用 just joined 表达刚加入" },
+  "work-3": { en: "Could you show me?", zh: "你可以演示给我看吗？", hint: "把 help me 换成 show me" },
+  "work-5": { en: "Thanks. I really appreciate it.", zh: "谢谢，我真的很感激。", hint: "加上 really 表达更真诚" },
+  "rescue-1": { en: "Sorry. I didn't catch that.", zh: "不好意思，我刚才没听清。", hint: "换一种真实的补救说法" },
+  "rescue-2": { en: "Could you speak more slowly?", zh: "你可以说得再慢一点吗？", hint: "用更完整的礼貌问法" },
+  "rescue-3": { en: "Could you say that again?", zh: "你可以再说一遍吗？", hint: "把 Can 换成 Could" },
+  "rescue-5": { en: "Yes. Exactly.", zh: "对，完全正确。", hint: "用 Exactly 做自然确认" }
+};
 
 // 每句只绑定一个“声音—字母—意思”钩子，避免把零基础学习变成整页默写。
 const SPELLING_FOCUS = {
@@ -174,15 +203,21 @@ function emptyState() {
     schema: APP_VERSION,
     profile: null,
     known: [],
+    phraseProgress: {},
     learnedAt: {},
     reviews: {},
     spelling: {},
     aiMemories: [],
     best: 0,
+    bestTotal: 0,
     days: [],
     todayKnown: {},
+    dailyEvidence: {},
+    aiUsageByDate: {},
+    lastBackupAt: "",
+    lastSeenVersion: "",
     rate: .68,
-    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, speechChecks: 0, speechPasses: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, aiSessions: 0, aiTurns: 0, aiReviews: 0, activeDates: [] },
+    metrics: { openings: 0, audioPlays: 0, recordings: 0, comparisons: 0, recognitions: 0, speechChecks: 0, speechPasses: 0, listeningChecks: 0, listeningPasses: 0, recallPasses: 0, variationPasses: 0, skips: 0, roleplays: 0, reviewAnswers: 0, quizzes: 0, spellingAttempts: 0, spellingWins: 0, aiSessions: 0, aiTurns: 0, aiReviews: 0, diagnosticRuns: 0, activeDates: [] },
     migrations: []
   };
 }
@@ -201,6 +236,20 @@ function sanitizeState(raw) {
   merged.known = Array.isArray(merged.known) ? [...new Set(merged.known.filter(id => phraseRefById(id)))] : [];
   merged.days = Array.isArray(merged.days) ? [...new Set(merged.days)] : [];
   const validIds = new Set(allPhraseRefs().map(ref => ref.line.id));
+  const rawProgress = merged.phraseProgress && typeof merged.phraseProgress === "object" ? merged.phraseProgress : {};
+  merged.phraseProgress = Object.fromEntries(Object.entries(rawProgress).filter(([id]) => validIds.has(id)).map(([id, item]) => [id, {
+    stage: Math.max(STAGE.NEW, Math.min(STAGE.VARIED, Number(item?.stage) || STAGE.NEW)),
+    attempts: Math.max(0, Math.min(999, Number(item?.attempts) || 0)),
+    imitatePasses: Math.max(0, Math.min(99, Number(item?.imitatePasses) || 0)),
+    recallPasses: Math.max(0, Math.min(99, Number(item?.recallPasses) || 0)),
+    variationPasses: Math.max(0, Math.min(99, Number(item?.variationPasses) || 0)),
+    listeningPasses: Math.max(0, Math.min(99, Number(item?.listeningPasses) || 0)),
+    firstTryPassed: item?.firstTryPassed === true,
+    lastOutcome: ["pass", "understood", "almost", "retry", "uncertain"].includes(item?.lastOutcome) ? item.lastOutcome : "",
+    weakWord: String(item?.weakWord || "").replace(/[^a-z'-]/gi, "").slice(0, 30),
+    updatedAt: /^\d{4}-\d{2}-\d{2}$/.test(item?.updatedAt || "") ? item.updatedAt : "",
+    legacy: item?.legacy === true
+  }]));
   merged.learnedAt = Object.fromEntries(Object.entries(merged.learnedAt && typeof merged.learnedAt === "object" ? merged.learnedAt : {}).filter(([id, date]) => validIds.has(id) && /^\d{4}-\d{2}-\d{2}$/.test(date)));
   merged.reviews = Object.fromEntries(Object.entries(merged.reviews && typeof merged.reviews === "object" ? merged.reviews : {}).filter(([id, review]) => validIds.has(id) && review && /^\d{4}-\d{2}-\d{2}$/.test(review.due || "")).map(([id, review]) => [id, { level: Math.max(0, Math.min(4, Number(review.level) || 0)), due: review.due, successes: Math.max(0, Number(review.successes) || 0), lapses: Math.max(0, Number(review.lapses) || 0), lastMs: Math.max(0, Number(review.lastMs) || 0) }]));
   merged.spelling = Object.fromEntries(Object.entries(merged.spelling && typeof merged.spelling === "object" ? merged.spelling : {}).filter(([id]) => validIds.has(id)).map(([id, item]) => [id, { wins: Math.max(0, Math.min(99, Number(item?.wins) || 0)), attempts: Math.max(0, Math.min(999, Number(item?.attempts) || 0)), lastSeen: /^\d{4}-\d{2}-\d{2}$/.test(item?.lastSeen || "") ? item.lastSeen : localDateKey() }]));
@@ -214,18 +263,31 @@ function sanitizeState(raw) {
     createdAt: /^\d{4}-\d{2}-\d{2}$/.test(item?.createdAt || "") ? item.createdAt : localDateKey()
   })).filter(item => item.en);
   merged.todayKnown = Object.fromEntries(Object.entries(merged.todayKnown && typeof merged.todayKnown === "object" ? merged.todayKnown : {}).filter(([date, ids]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(ids)).map(([date, ids]) => [date, [...new Set(ids.filter(id => validIds.has(id)))]]));
+  merged.dailyEvidence = Object.fromEntries(Object.entries(merged.dailyEvidence && typeof merged.dailyEvidence === "object" ? merged.dailyEvidence : {}).filter(([date, values]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(values)).map(([date, values]) => [date, [...new Set(values.map(value => String(value).slice(0, 80)))].slice(-100)]));
+  merged.aiUsageByDate = Object.fromEntries(Object.entries(merged.aiUsageByDate && typeof merged.aiUsageByDate === "object" ? merged.aiUsageByDate : {}).filter(([date]) => /^\d{4}-\d{2}-\d{2}$/.test(date)).map(([date, count]) => [date, Math.max(0, Math.min(1000, Number(count) || 0))]));
+  merged.lastBackupAt = /^\d{4}-\d{2}-\d{2}$/.test(merged.lastBackupAt || "") ? merged.lastBackupAt : "";
+  merged.lastSeenVersion = String(merged.lastSeenVersion || "").slice(0, 24);
+  merged.best = Math.max(0, Math.min(5, Number(merged.best) || 0));
+  merged.bestTotal = Math.max(0, Math.min(5, Number(merged.bestTotal) || 0));
   merged.metrics = Object.assign(emptyState().metrics, merged.metrics || {});
   merged.metrics.activeDates = Array.isArray(merged.metrics.activeDates) ? [...new Set(merged.metrics.activeDates)] : [];
-  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "speechChecks", "speechPasses", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins", "aiSessions", "aiTurns", "aiReviews"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
+  ["openings", "audioPlays", "recordings", "comparisons", "recognitions", "speechChecks", "speechPasses", "listeningChecks", "listeningPasses", "recallPasses", "variationPasses", "skips", "roleplays", "reviewAnswers", "quizzes", "spellingAttempts", "spellingWins", "aiSessions", "aiTurns", "aiReviews", "diagnosticRuns"].forEach(key => { merged.metrics[key] = Math.max(0, Math.min(1000000, Number(merged.metrics[key]) || 0)); });
   merged.migrations = Array.isArray(merged.migrations) ? merged.migrations.slice(-20) : [];
   if (merged.profile) {
     merged.profile.name = cleanName(merged.profile.name) || "Alex";
     merged.profile.goal = courseOrders[merged.profile.goal] ? merged.profile.goal : "daily";
     merged.profile.minutes = [3, 5, 10].includes(Number(merged.profile.minutes)) ? Number(merged.profile.minutes) : 5;
+    merged.profile.interest = INTEREST_LABELS[merged.profile.interest] ? merged.profile.interest : "trends";
   }
   merged.known.forEach(id => {
+    if (!merged.phraseProgress[id]) merged.phraseProgress[id] = { stage: STAGE.NEW, attempts: 0, imitatePasses: 0, recallPasses: 0, variationPasses: 0, listeningPasses: 0, firstTryPassed: false, lastOutcome: "", weakWord: "", updatedAt: "", legacy: true };
     if (!merged.learnedAt[id]) merged.learnedAt[id] = localDateKey();
     if (!merged.reviews[id]) merged.reviews[id] = { level: 0, due: addDays(localDateKey(), 1) };
+  });
+  Object.entries(merged.phraseProgress).forEach(([id, progress]) => {
+    const ref = phraseRefById(id);
+    const required = ref?.line?.speaker === "YOU" ? STAGE.RECALLED : STAGE.HEARD;
+    if (progress.stage >= required && !merged.known.includes(id)) merged.known.push(id);
   });
   return merged;
 }
@@ -235,7 +297,7 @@ function migrateLegacy() {
     const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
     if (!legacy) return null;
     const next = emptyState();
-    next.profile = { name: "Alex", goal: "daily", minutes: 5 };
+    next.profile = { name: "Alex", goal: "daily", minutes: 5, interest: "trends" };
     next.best = Number(legacy.best || 0);
     next.rate = Number(legacy.rate || .68);
     next.migrations.push({ from: "v1", to: APP_VERSION, date: localDateKey() });
@@ -275,6 +337,9 @@ let recordingUrl = null;
 let speechCheckSerial = 0;
 let browserSpeechCheck = null;
 let activeOriginalAudio = null;
+let practiceMode = "imitate";
+let audioPlayedForCurrent = false;
+let listeningUnlockedForCurrent = false;
 let questionStartedAt = 0;
 let roleSceneId = null;
 let roleIndex = 0;
@@ -293,11 +358,13 @@ let aiTurnCount = 0;
 let aiLastResult = null;
 let aiBusy = false;
 let aiRecognition = null;
+let aiInputWasSpeech = false;
 let activeAiVoiceButton = null;
 let aiVoiceAvailable = null;
 let currentAiReviewId = null;
 let deferredInstall = null;
 let toastTimer = null;
+let diagnosticText = "";
 
 function saveState(render = true) {
   state.schema = APP_VERSION;
@@ -342,6 +409,7 @@ function recordSpelling(ref, correct) {
   };
   state.metrics.spellingAttempts++;
   if (correct) state.metrics.spellingWins++;
+  markActive();
 }
 
 function orderedScenes() {
@@ -349,11 +417,89 @@ function orderedScenes() {
   return order.map(sceneById);
 }
 
-function completedSceneCount() {
-  return scenes.filter(scene => scene.lines.every(line => state.known.includes(line.id))).length;
+function blankPhraseProgress() {
+  return { stage: STAGE.NEW, attempts: 0, imitatePasses: 0, recallPasses: 0, variationPasses: 0, listeningPasses: 0, firstTryPassed: false, lastOutcome: "", weakWord: "", updatedAt: "", legacy: false };
 }
 
-function dailyGoal() { return DAILY_TARGETS[state.profile?.minutes || 5] || 5; }
+function progressFor(id) {
+  if (!state.phraseProgress[id]) state.phraseProgress[id] = blankPhraseProgress();
+  return state.phraseProgress[id];
+}
+
+function isUserLine(refOrLine) {
+  const line = refOrLine?.line || refOrLine;
+  return line?.speaker === "YOU";
+}
+
+function requiredStage(refOrLine) {
+  return isUserLine(refOrLine) ? STAGE.RECALLED : STAGE.HEARD;
+}
+
+function taskCompleted(ref) {
+  return progressFor(ref.line.id).stage >= requiredStage(ref);
+}
+
+function taskMastered(ref) {
+  return progressFor(ref.line.id).stage >= (isUserLine(ref) && PHRASE_VARIATIONS[ref.line.id] ? STAGE.VARIED : requiredStage(ref));
+}
+
+function completedSceneCount() {
+  return scenes.filter(scene => scene.lines.every((line, index) => taskMastered({ scene, line, index }))).length;
+}
+
+function abilityCounts() {
+  const refs = allPhraseRefs();
+  return {
+    heard: refs.filter(ref => !isUserLine(ref) && progressFor(ref.line.id).stage >= STAGE.HEARD).length,
+    imitated: refs.filter(ref => isUserLine(ref) && progressFor(ref.line.id).stage >= STAGE.IMITATED).length,
+    recalled: refs.filter(ref => isUserLine(ref) && progressFor(ref.line.id).stage >= STAGE.RECALLED).length,
+    varied: refs.filter(ref => isUserLine(ref) && progressFor(ref.line.id).stage >= STAGE.VARIED).length
+  };
+}
+
+function markActive() {
+  const today = localDateKey();
+  if (!state.days.includes(today)) state.days.push(today);
+  if (!state.metrics.activeDates.includes(today)) state.metrics.activeDates.push(today);
+}
+
+function registerEvidence(id, stage) {
+  const today = localDateKey();
+  state.dailyEvidence[today] = state.dailyEvidence[today] || [];
+  const key = `${id}:${stage}`;
+  if (!state.dailyEvidence[today].includes(key)) state.dailyEvidence[today].push(key);
+  markActive();
+}
+
+function recordCapability(ref, stage, details = {}) {
+  const progress = progressFor(ref.line.id);
+  const previous = progress.stage;
+  progress.attempts = Math.min(999, progress.attempts + (details.attempt === false ? 0 : 1));
+  progress.lastOutcome = details.outcome || progress.lastOutcome;
+  progress.weakWord = details.weakWord || "";
+  if (details.firstTryPassed === true) progress.firstTryPassed = true;
+  if (stage === STAGE.HEARD && !isUserLine(ref)) progress.listeningPasses = Math.min(99, progress.listeningPasses + 1);
+  if (stage === STAGE.IMITATED) progress.imitatePasses = Math.min(99, progress.imitatePasses + 1);
+  if (stage === STAGE.RECALLED) progress.recallPasses = Math.min(99, progress.recallPasses + 1);
+  if (stage === STAGE.VARIED) progress.variationPasses = Math.min(99, progress.variationPasses + 1);
+  progress.stage = Math.max(progress.stage, stage);
+  progress.updatedAt = localDateKey();
+  progress.legacy = false;
+  // 每天同一能力最多记一次；复习时再次真实开口也算当天证据，不只记录首次升级。
+  registerEvidence(ref.line.id, stage);
+
+  if (progress.stage >= requiredStage(ref) && !state.known.includes(ref.line.id)) {
+    state.known.push(ref.line.id);
+    state.learnedAt[ref.line.id] = localDateKey();
+    state.reviews[ref.line.id] = { level: 0, due: addDays(localDateKey(), 1) };
+  }
+}
+
+function dailyGoal() { return DAILY_TARGETS[state.profile?.minutes || 5] || 2; }
+
+function dailyEvidenceCount(date = localDateKey()) {
+  return new Set((state.dailyEvidence[date] || []).filter(value => /:(2|3|4)$/.test(value))).size;
+}
 
 function dueRefs() {
   const today = localDateKey();
@@ -377,7 +523,7 @@ function weekStartKey() {
 
 function weeklyKnownCount() {
   const start = weekStartKey();
-  return Object.values(state.learnedAt).filter(date => date >= start && date <= localDateKey()).length;
+  return Object.entries(state.dailyEvidence).filter(([date]) => date >= start && date <= localDateKey()).flatMap(([, values]) => values).filter(value => /:(2|3|4)$/.test(value)).length;
 }
 
 function streakCount() {
@@ -395,76 +541,83 @@ function streakCount() {
 
 function nextPhraseRef() {
   for (const scene of orderedScenes()) {
-    const index = scene.lines.findIndex(line => !state.known.includes(line.id));
+    const index = scene.lines.findIndex((line, index) => !taskCompleted({ scene, line, index }));
     if (index >= 0) return { scene, line: scene.lines[index], index };
   }
   return dueRefs()[0] || { scene: orderedScenes()[0], line: orderedScenes()[0].lines[0], index: 0 };
 }
 
-function registerLearned(id) {
-  const today = localDateKey();
-  state.todayKnown[today] = state.todayKnown[today] || [];
-  if (!state.todayKnown[today].includes(id)) state.todayKnown[today].push(id);
-  if (!state.days.includes(today)) state.days.push(today);
-  if (!state.metrics.activeDates.includes(today)) state.metrics.activeDates.push(today);
+function nextUserPhraseRef() {
+  for (const scene of orderedScenes()) {
+    const index = scene.lines.findIndex((line, index) => isUserLine(line) && progressFor(line.id).stage < STAGE.RECALLED);
+    if (index >= 0) return { scene, line: scene.lines[index], index };
+  }
+  return nextPhraseRef();
 }
 
 function updateAll() {
   const today = localDateKey();
-  const todayCount = state.todayKnown[today]?.length || 0;
+  const todayCount = dailyEvidenceCount(today);
   const target = dailyGoal();
   const due = dueRefs().length + dueAiMemories().length;
   const weekCount = weeklyKnownCount();
   const next = nextPhraseRef();
-  const nextIncompleteScene = orderedScenes().find(scene => !scene.lines.every(line => state.known.includes(line.id))) || orderedScenes()[0];
+  const nextOutput = nextUserPhraseRef();
+  const counts = abilityCounts();
+  const nextIncompleteScene = orderedScenes().find(scene => !scene.lines.every((line, index) => taskCompleted({ scene, line, index }))) || orderedScenes()[0];
 
   $("streakCount").textContent = streakCount();
   $("minutesLabel").textContent = `${state.profile?.minutes || 5} MIN`;
-  $("missionNumber").textContent = String(state.known.length + 1).padStart(2, "0");
-  $("heroEnglish").textContent = displayText(next.line.en);
-  $("heroChinese").textContent = displayText(next.line.zh);
-  const nextSpell = spellingFocus(next);
-  $("heroSpellEcho").textContent = nextSpell ? `WORD ECHO · ${spellingMask(nextSpell)}` : "WORD ECHO · SAY IT";
+  $("missionNumber").textContent = String(counts.recalled + 1).padStart(2, "0");
+  $("heroEnglish").textContent = displayText(nextOutput.line.en);
+  $("heroChinese").textContent = displayText(nextOutput.line.zh);
+  $("heroSpellEcho").textContent = `${INTEREST_LABELS[state.profile?.interest || "trends"]} · YOUR TURN`;
   $("continueBtn").dataset.scene = next.scene.id;
   $("continueBtn").dataset.phrase = next.index;
-  $("continueBtn").textContent = state.known.length ? "继续今天的练习 →" : "第一步 · 点这里开始 →";
-  $("dailyGoalLabel").textContent = `目标 ${target} 句`;
+  $("continueBtn").textContent = counts.recalled ? "继续今天的真实开口 →" : "第一步 · 先听对方再开口 →";
+  $("dailyGoalLabel").textContent = `目标 ${target} 次真实开口`;
   $("todayProgressText").textContent = `${Math.min(todayCount, target)} / ${target}`;
   $("todayProgressFill").style.width = `${Math.min(todayCount / target * 100, 100)}%`;
   $("dueCount").textContent = due;
   $("weekKnown").textContent = weekCount;
-  $("quizBest").textContent = state.best ? `${state.best}/5` : "—";
+  $("quizBest").textContent = state.best ? `${state.best}/${state.bestTotal || 5}` : "—";
   renderWeekDots(weekCount);
-  $("weeklyCopy").textContent = weekCount >= 12 ? "本周目标完成。把其中一句真正用出去。" : `再拿下 ${12 - weekCount} 句，形成本周表达库存。`;
+  $("weeklyCopy").textContent = weekCount >= 8 ? "本周真实开口目标完成。挑一句放进 AI 对话。" : `再完成 ${Math.max(0, 8 - weekCount)} 次有效开口，不靠点下一句刷进度。`;
   $("nextSceneNumber").textContent = String(orderedScenes().indexOf(nextIncompleteScene) + 1).padStart(2, "0");
   $("nextSceneTitle").textContent = nextIncompleteScene.title;
   $("nextSceneDesc").textContent = nextIncompleteScene.desc;
   $("nextSceneBtn").dataset.scene = nextIncompleteScene.id;
 
   $("reviewDueLarge").textContent = due;
-  $("reviewKnownLarge").textContent = state.known.length;
+  $("reviewKnownLarge").textContent = counts.recalled;
   $("reviewNextLarge").textContent = nextReviewLabel();
-  $("profileKnown").textContent = state.known.length;
+  $("profileKnown").textContent = counts.heard;
   $("profileDone").textContent = completedSceneCount();
-  $("profileSpelling").textContent = spellingWordCount();
-  $("profileReview").textContent = state.metrics.reviewAnswers;
-  $("profileRecordings").textContent = state.metrics.recordings;
-  $("localMetrics").textContent = `本机打开 ${state.metrics.openings} 次 · 手机听懂 ${state.metrics.speechPasses}/${state.metrics.speechChecks} 次 · 播放示范 ${state.metrics.audioPlays} 次 · 完成跟读 ${state.metrics.recordings} 次 · 拼写补全 ${state.metrics.spellingWins} 次 · 对比练习 ${state.metrics.comparisons} 次 · 完整角色扮演 ${state.metrics.roleplays} 次 · AI 陪练 ${state.metrics.aiTurns} 回合 · AI 回声 ${state.metrics.aiReviews} 次 · 完成记忆检查 ${state.metrics.quizzes} 轮 · 有学习记录 ${state.metrics.activeDates.length} 天`;
+  $("profileSpelling").textContent = counts.varied;
+  $("profileReview").textContent = counts.recalled;
+  $("profileRecordings").textContent = counts.imitated;
+  $("localMetrics").textContent = `真实能力：听懂对方 ${counts.heard} 句 · 跟读通过 ${counts.imitated} 句 · 脱稿说出 ${counts.recalled} 句 · 变化表达 ${counts.varied} 句。过程记录：播放 ${state.metrics.audioPlays} 次 · 语音判断 ${state.metrics.speechChecks} 次 · 跳过 ${state.metrics.skips} 次 · AI ${state.metrics.aiTurns} 回合 · 有效学习 ${state.metrics.activeDates.length} 天。重复点击和原始识别文字不计入掌握。`;
 
   if (state.profile) {
     $("profileName").value = state.profile.name;
     $("goalSelect").value = state.profile.goal;
     $("minutesSelect").value = String(state.profile.minutes);
+    $("interestSelect").value = state.profile.interest || "trends";
   }
   $("rateSelect").value = String(state.rate || .68);
+  $("appVersionLabel").textContent = `V${APP_VERSION}`;
+  $("buildDateLabel").textContent = BUILD_DATE;
+  $("backupStatus").textContent = state.lastBackupAt
+    ? `最近一次导出：${state.lastBackupAt}。覆盖安装通常保留；卸载前仍建议再导出一次。`
+    : (state.metrics.activeDates.length >= 3 ? "你已经有连续学习证据，建议现在导出一次；卸载 App 会丢失本机记录。" : "开始形成能力记录后，这里会提醒你备份。 ");
   renderAiMemoryReview();
   renderAiConnectionStatus();
   renderLessonList();
 }
 
 function renderWeekDots(count) {
-  $("weekDots").innerHTML = Array.from({ length: 12 }, (_, index) => `<span class="week-dot ${index < count ? "filled" : ""}" aria-hidden="true"></span>`).join("");
-  $("weekDots").setAttribute("aria-label", `本周已拿下 ${count} 句，目标 12 句`);
+  $("weekDots").innerHTML = Array.from({ length: 8 }, (_, index) => `<span class="week-dot ${index < count ? "filled" : ""}" aria-hidden="true"></span>`).join("");
+  $("weekDots").setAttribute("aria-label", `本周已完成 ${count} 次有效开口，目标 8 次`);
 }
 
 function showView(name) {
@@ -479,9 +632,10 @@ function showView(name) {
 
 function renderLessonList() {
   $("lessonList").innerHTML = orderedScenes().map((scene, orderIndex) => {
-    const learned = scene.lines.filter(line => state.known.includes(line.id)).length;
-    const done = learned === scene.lines.length;
-    return `<button class="lesson-card ${done ? "done" : ""}" type="button" data-scene="${scene.id}"><span class="lesson-icon">${done ? "✓" : String(orderIndex + 1).padStart(2, "0")}</span><span><h3>${scene.title}</h3><p>${scene.desc} · ${learned}/${scene.lines.length} 句</p></span><span class="lesson-status">${done ? "✓" : "›"}</span></button>`;
+    const completed = scene.lines.filter((line, index) => taskCompleted({ scene, line, index })).length;
+    const mastered = scene.lines.filter((line, index) => taskMastered({ scene, line, index })).length;
+    const done = mastered === scene.lines.length;
+    return `<button class="lesson-card ${done ? "done" : ""}" type="button" data-scene="${scene.id}"><span class="lesson-icon">${done ? "✓" : String(orderIndex + 1).padStart(2, "0")}</span><span><h3>${scene.title}</h3><p>${scene.desc} · 完成 ${completed}/${scene.lines.length} · 稳定 ${mastered}/${scene.lines.length}</p></span><span class="lesson-status">${done ? "✓" : "›"}</span></button>`;
   }).join("");
   $("lessonList").querySelectorAll(".lesson-card").forEach(button => button.addEventListener("click", () => openScene(button.dataset.scene, 0)));
 }
@@ -506,29 +660,138 @@ function renderPhrase() {
   cleanupRecording();
   const scene = sceneById(currentSceneId);
   const line = scene.lines[currentPhraseIndex];
+  const ref = { scene, line, index: currentPhraseIndex };
+  const progress = progressFor(line.id);
+  const userTurn = isUserLine(line);
+  practiceMode = "imitate";
+  audioPlayedForCurrent = progress.stage >= STAGE.IMITATED;
+  listeningUnlockedForCurrent = progress.stage >= STAGE.HEARD;
   $("lessonNumber").textContent = `SCENE ${String(orderedScenes().indexOf(scene) + 1).padStart(2, "0")}`;
   $("lessonName").textContent = scene.title;
   $("lessonStep").textContent = `${currentPhraseIndex + 1} / ${scene.lines.length}`;
   $("lessonContext").textContent = scene.context;
   $("speakerBadge").textContent = line.speaker;
   $("phraseIndex").textContent = `LINE ${String(currentPhraseIndex + 1).padStart(2, "0")}`;
-  $("phraseEnglish").textContent = displayText(line.en);
-  $("phraseChinese").textContent = displayText(line.zh);
+  $("phraseTaskType").textContent = userTurn ? "YOUR TURN / 轮到你开口" : "LISTEN FIRST / 先听懂对方";
+  $("lessonSteps").innerHTML = userTurn
+    ? "<span><b>1</b>听示范</span><span><b>2</b>跟读检查</span><span><b>3</b>隐藏英文说</span>"
+    : "<span><b>1</b>听对方</span><span><b>2</b>选主要意思</span><span><b>3</b>继续</span>";
+  $("capabilityStatus").textContent = capabilityStageLabel(ref);
+  $("capabilityEvidence").textContent = capabilityEvidenceCopy(ref);
+  $("phraseEnglish").classList.toggle("concealed-text", userTurn ? !audioPlayedForCurrent : !listeningUnlockedForCurrent);
+  $("phraseEnglish").textContent = userTurn
+    ? (audioPlayedForCurrent ? displayText(line.en) : "先听声音，不看英文")
+    : (listeningUnlockedForCurrent ? displayText(line.en) : "先听对方，再选主要意思");
+  $("phraseChinese").textContent = userTurn
+    ? displayText(line.zh)
+    : (listeningUnlockedForCurrent ? displayText(line.zh) : "字幕会在听懂后出现");
   $("phrasePronounce").textContent = `近似音：${displayText(line.pron)}`;
   $("phraseRhythm").innerHTML = line.rhythm.map(part => `<span class="${/[A-Z]{2}/.test(part) ? "stress" : ""}">${escapeHtml(displayText(part))}</span>`).join("");
   $("phraseWhen").textContent = line.when;
-  $("phraseMission").textContent = line.mission;
+  $("phraseMission").textContent = personalizedMission(ref);
   $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
-  $("knownBtn").textContent = state.known.includes(line.id) ? "已拿下 · 下一句 →" : "拿下这句 · 下一句 →";
+  $("knownBtn").disabled = !taskCompleted(ref);
+  $("knownBtn").textContent = taskCompleted(ref)
+    ? (!userTurn ? "听懂主要意思 · 下一句 →" : (taskMastered(ref) ? "已经能真实使用 · 下一句 →" : "本次通过 · 下一句 →"))
+    : (userTurn ? "脱稿说出后继续 →" : "选对主要意思后继续 →");
   $("audioStatus").textContent = ["social-1", "work-1"].includes(line.id) ? "示范会在名字处停一下，轮到你说自己的名字" : "等待播放";
   $("pronunciationDetails").open = false;
-  renderSpelling({ scene, line, index: currentPhraseIndex });
+  $("recordPanel").hidden = !userTurn;
+  $("listeningCheck").hidden = userTurn;
+  $("speechNextActions").hidden = true;
+  $("variationCue").hidden = true;
+  $("openMicSettings").hidden = true;
+  if (userTurn) {
+    $("recordTitle").textContent = progress.stage >= STAGE.IMITATED ? "现在不看英文，再说一次" : "说一句，马上知道手机有没有听清";
+    $("recognizeBtn").textContent = progress.stage >= STAGE.IMITATED ? "🎙 先跟读检查" : "🎙 说一句 · 马上判断";
+    renderSpeechNextActions(ref);
+  } else {
+    renderListeningCheck(ref);
+  }
+  renderSpelling(ref);
   renderTranscript(scene);
+}
+
+function capabilityStageLabel(ref) {
+  const stage = progressFor(ref.line.id).stage;
+  if (!isUserLine(ref)) return stage >= STAGE.HEARD ? "已听懂主要意思 ✓" : "等待听力判断";
+  if (stage >= STAGE.VARIED) return "已经会变化表达 ✓";
+  if (stage >= STAGE.RECALLED) return "已经能脱稿说出 ✓";
+  if (stage >= STAGE.IMITATED) return "跟读已被手机听清";
+  if (progressFor(ref.line.id).legacy) return "旧版接触过 · 需要重新验证";
+  return "先听，再开口";
+}
+
+function capabilityEvidenceCopy(ref) {
+  const progress = progressFor(ref.line.id);
+  if (!isUserLine(ref)) return progress.stage >= STAGE.HEARD ? "不是背台词：你已经抓住对方意图" : "先听声音，再选对方主要意思";
+  if (progress.stage >= STAGE.VARIED) return "已完成跟读、脱稿和替换真实信息";
+  if (progress.stage >= STAGE.RECALLED) return "本次可以继续；再变化一次才算稳定使用";
+  if (progress.stage >= STAGE.IMITATED) return "下一步隐藏英文，证明不是照着读";
+  return "完整英文会在听完示范后出现";
+}
+
+function personalizedMission(ref) {
+  const base = ref.line.mission;
+  const interest = state.profile?.interest || "trends";
+  const extras = {
+    trends: "把其中一个词换成你真的会在潮流店里用的信息。",
+    music: "想象在音乐现场或和新朋友聊天时把它说出来。",
+    creative: "想象在展览、工作室或创意活动中自然接上这句。",
+    daily: "今天遇到相似画面时，在心里不看提示说一次。"
+  };
+  return `${base} ${extras[interest]}`;
+}
+
+function renderListeningCheck(ref) {
+  const complete = progressFor(ref.line.id).stage >= STAGE.HEARD;
+  $("listeningFeedback").textContent = complete ? "主要意思已经听懂，可以继续。" : (audioPlayedForCurrent ? "选一个最接近的意思。" : "先点上面的粉色播放按钮。");
+  if (complete) {
+    $("listeningOptions").innerHTML = `<button type="button" class="choice correct" disabled>${escapeHtml(displayText(ref.line.zh))}</button>`;
+    return;
+  }
+  const alternatives = shuffled(allPhraseRefs().filter(item => item.line.id !== ref.line.id).map(item => displayText(item.line.zh)).filter((value, index, list) => list.indexOf(value) === index)).slice(0, 2);
+  const options = shuffled([displayText(ref.line.zh), ...alternatives]);
+  $("listeningOptions").innerHTML = options.map(value => `<button class="choice" type="button" data-listening-correct="${value === displayText(ref.line.zh)}" ${audioPlayedForCurrent ? "" : "disabled"}>${escapeHtml(value)}</button>`).join("");
+  $("listeningOptions").querySelectorAll("[data-listening-correct]").forEach(button => button.addEventListener("click", () => answerListening(ref, button)));
+}
+
+function answerListening(ref, button) {
+  state.metrics.listeningChecks++;
+  const progress = progressFor(ref.line.id);
+  const firstTry = progress.attempts === 0;
+  if (button.dataset.listeningCorrect !== "true") {
+    progress.attempts = Math.min(999, progress.attempts + 1);
+    progress.lastOutcome = "retry";
+    progress.updatedAt = localDateKey();
+    button.disabled = true;
+    button.classList.add("wrong");
+    $("listeningFeedback").textContent = "不是这个意思。再听一次，只抓最重要的两个词。";
+    markActive();
+    saveState(false);
+    return;
+  }
+  state.metrics.listeningPasses++;
+  recordCapability(ref, STAGE.HEARD, { outcome: "pass", firstTryPassed: firstTry });
+  listeningUnlockedForCurrent = true;
+  saveState(false);
+  renderPhrase();
+  toast("听懂的是对方意图，不要求你背对方台词。");
+}
+
+function renderSpeechNextActions(ref) {
+  const progress = progressFor(ref.line.id);
+  const variation = PHRASE_VARIATIONS[ref.line.id];
+  $("speechNextActions").hidden = progress.stage < STAGE.IMITATED;
+  $("startRecallBtn").hidden = progress.stage < STAGE.IMITATED || progress.stage >= STAGE.RECALLED;
+  $("startVariationBtn").hidden = !variation || progress.stage < STAGE.RECALLED || progress.stage >= STAGE.VARIED;
 }
 
 function renderSpelling(ref) {
   const focus = spellingFocus(ref);
-  if (!focus) { $("spellLock").hidden = true; return; }
+  const progress = progressFor(ref.line.id);
+  const needsRepair = isUserLine(ref) && focus && (progress.attempts >= 2 || progress.weakWord === focus.word || (state.spelling[ref.line.id]?.attempts || 0) > 0);
+  if (!needsRepair) { $("spellLock").hidden = true; return; }
   $("spellLock").hidden = false;
   const memory = state.spelling[ref.line.id] || { wins: 0 };
   $("spellLevel").textContent = memory.wins ? `已经撞见 ${memory.wins + 1} 次` : "第 1 次遇见";
@@ -649,6 +912,24 @@ async function playOriginal(ref, rate = 1, countMetric = false) {
   return played;
 }
 
+async function stopAllPlayback() {
+  if (activeOriginalAudio) {
+    const audio = activeOriginalAudio;
+    activeOriginalAudio = null;
+    audio.pause();
+    audio.removeAttribute("src");
+  }
+  try { await nativeAudioPlugin()?.stop?.(); } catch {}
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  try { await stopAiVoice(); } catch {}
+  const playback = $("recordingPlayback");
+  if (playback && !playback.paused) playback.pause();
+}
+
+function waitMs(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function speakCurrent(rate) {
   const scene = sceneById(currentSceneId);
   const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
@@ -656,6 +937,18 @@ async function speakCurrent(rate) {
   controls.forEach(button => { button.disabled = true; button.classList.add("is-playing"); });
   $("audioStatus").textContent = "🔊 正在播放…如果没听到，请先按手机侧边音量＋";
   const played = await playOriginal(ref, rate, true);
+  if (played) {
+    markActive();
+    saveState(false);
+    audioPlayedForCurrent = true;
+    if (isUserLine(ref)) {
+      $("phraseEnglish").textContent = displayText(ref.line.en);
+      $("phraseEnglish").classList.remove("concealed-text");
+      $("capabilityEvidence").textContent = progressFor(ref.line.id).stage >= STAGE.IMITATED ? capabilityEvidenceCopy(ref) : "现在跟着示范说一次；通过后还要隐藏英文再说";
+    } else {
+      renderListeningCheck(ref);
+    }
+  }
   controls.forEach(button => { button.disabled = false; button.classList.remove("is-playing"); });
   $("audioStatus").textContent = played ? "播放完成。没听到？按手机侧边音量＋后再点一次。" : "播放失败。请确认媒体音量已打开，再重试。";
   if (!played) toast("音频播放失败，请截图这一页发给我。");
@@ -741,7 +1034,7 @@ function finishRecording() {
   mediaStream = null;
   mediaRecorder = null;
   state.metrics.recordings++;
-  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  markActive();
   saveState();
 }
 
@@ -777,12 +1070,15 @@ function cleanupRecording() {
     $("recognizeBtn").disabled = false;
     $("recognizeBtn").classList.remove("listening");
     $("recognizeBtn").textContent = "🎙 说一句 · 马上判断";
-    $("recognitionResult").textContent = "点一下，说上面的英文。手机系统识别可能联网；十一说不保存录音和识别文字。";
+    $("recognitionResult").textContent = "声音可能由手机提供的语音识别服务联网处理；十一说不保存录音和识别文字。";
     $("speechFeedback").hidden = true;
     $("speechFeedback").className = "speech-feedback";
     $("speechWordDiff").replaceChildren();
     $("speechOutcome").textContent = "";
     $("speechNextStep").textContent = "";
+    $("speechNextActions").hidden = true;
+    $("variationCue").hidden = true;
+    $("openMicSettings").hidden = true;
     $("knownBtn")?.classList.remove("speech-ready");
   }
 }
@@ -814,15 +1110,26 @@ async function compareRecording() {
 }
 
 function gradeRecording(value) {
-  const line = sceneById(currentSceneId).lines[currentPhraseIndex];
-  if (state.known.includes(line.id)) {
-    const review = state.reviews[line.id] || { level: 0, due: addDays(localDateKey(), 1) };
-    if (value === "again") review.due = addDays(localDateKey(), 1);
+  const ref = currentSpeechRef();
+  if (value === "close" && recordingUrl && isUserLine(ref)) {
+    const stage = practiceMode === "variation" ? STAGE.VARIED : practiceMode === "recall" ? STAGE.RECALLED : STAGE.IMITATED;
+    recordCapability(ref, stage, { outcome: "understood" });
+    if (stage === STAGE.RECALLED) state.metrics.recallPasses++;
+    if (stage === STAGE.VARIED) state.metrics.variationPasses++;
+    saveState(false);
+    $("capabilityStatus").textContent = capabilityStageLabel(ref);
+    $("capabilityEvidence").textContent = `${capabilityEvidenceCopy(ref)} · 本次来自你的诚实自评`;
+    $("knownBtn").disabled = !taskCompleted(ref);
+    $("knownBtn").textContent = taskCompleted(ref) ? "诚实自评通过 · 下一句 →" : "脱稿说出后继续 →";
+    renderSpeechNextActions(ref);
+  } else if (value === "again" && state.known.includes(ref.line.id)) {
+    const review = state.reviews[ref.line.id] || { level: 0, due: addDays(localDateKey(), 1) };
+    review.due = addDays(localDateKey(), 1);
     review.selfGrade = value;
-    state.reviews[line.id] = review;
-    saveState();
+    state.reviews[ref.line.id] = review;
+    saveState(false);
   }
-  toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "很好，保留自己的判断，不使用虚假分数。");
+  toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "已按你的诚实自评记录；没有冒充专业发音分。");
 }
 
 function nativeSpeechCheckPlugin() {
@@ -840,10 +1147,23 @@ function speechCheckErrorMessage(error) {
   return "这次没有识别成功。可以再试一次，或使用下面的录音对比。";
 }
 
-function renderSpeechEvaluation(evaluation) {
+function currentSpeechRef() {
+  const scene = sceneById(currentSceneId);
+  return { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
+}
+
+function currentSpeechTarget(ref) {
+  if (practiceMode === "variation" && PHRASE_VARIATIONS[ref.line.id]) return displayText(PHRASE_VARIATIONS[ref.line.id].en);
+  return displayText(ref.line.en);
+}
+
+function renderSpeechEvaluation(evaluation, confidence = -1) {
+  const ref = currentSpeechRef();
   const feedback = $("speechFeedback");
   feedback.hidden = false;
-  feedback.className = `speech-feedback ${evaluation.outcome}`;
+  const lowConfidence = confidence >= 0 && confidence < 0.35;
+  const outcome = lowConfidence ? "uncertain" : evaluation.outcome;
+  feedback.className = `speech-feedback ${outcome}`;
   $("recognitionResult").textContent = `手机听到：${evaluation.transcript || "—"}`;
   $("speechWordDiff").replaceChildren(...evaluation.words.map(item => {
     const token = document.createElement("span");
@@ -852,13 +1172,22 @@ function renderSpeechEvaluation(evaluation) {
     return token;
   }));
 
-  const passed = ["pass", "understood"].includes(evaluation.outcome);
-  if (evaluation.outcome === "pass") {
-    $("speechOutcome").textContent = "听懂了 ✓ 整句完整";
-    $("speechNextStep").textContent = "这句可以进入真实交流了。直接点“下一句”。";
+  const passed = !lowConfidence && ["pass", "understood"].includes(evaluation.outcome);
+  if (lowConfidence) {
+    $("speechOutcome").textContent = "这次判断不确定";
+    $("speechNextStep").textContent = "系统识别置信度太低，不把它算成通过。离手机近一点，再说一次。";
+  } else if (passed && practiceMode === "variation") {
+    $("speechOutcome").textContent = "变化表达完成 ✓";
+    $("speechNextStep").textContent = "你不是背答案，而是已经会替换真实信息。";
+  } else if (passed && practiceMode === "recall") {
+    $("speechOutcome").textContent = "不看英文也说出来了 ✓";
+    $("speechNextStep").textContent = PHRASE_VARIATIONS[ref.line.id] ? "本次已经能继续；再换一个真实信息，就升级为稳定使用。" : "这句已经有主动回忆证据，可以继续。";
+  } else if (evaluation.outcome === "pass") {
+    $("speechOutcome").textContent = "手机听清了这次跟读 ✓";
+    $("speechNextStep").textContent = "这还不是掌握。下一步隐藏英文，再说一次。";
   } else if (evaluation.outcome === "understood") {
-    $("speechOutcome").textContent = "能听懂 ✓ 不用追求播音腔";
-    $("speechNextStep").textContent = evaluation.focusWord ? `核心意思已经清楚；想更完整，再带上 ${evaluation.focusWord}。` : "核心意思已经清楚，可以继续。";
+    $("speechOutcome").textContent = "核心意思听清了 ✓";
+    $("speechNextStep").textContent = "不追求播音腔。现在隐藏英文，再证明自己不是照着读。";
   } else if (evaluation.outcome === "almost") {
     $("speechOutcome").textContent = evaluation.focusWord ? `差一个关键点：${evaluation.focusWord}` : "已经接近了，再慢一点";
     $("speechNextStep").textContent = evaluation.focusWord ? `点上面的“听慢速”，只盯住粉色的 ${evaluation.focusWord}，然后再说一次。` : "点上面的“听慢速”，再说一次。";
@@ -869,13 +1198,33 @@ function renderSpeechEvaluation(evaluation) {
 
   state.metrics.speechChecks++;
   state.metrics.recognitions++;
+  const progress = progressFor(ref.line.id);
   if (passed) {
     state.metrics.speechPasses++;
-    $("knownBtn").classList.add("speech-ready");
-    $("knownBtn").textContent = "手机听懂了 · 下一句 →";
+    if (practiceMode === "variation") {
+      state.metrics.variationPasses++;
+      recordCapability(ref, STAGE.VARIED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
+    } else if (practiceMode === "recall") {
+      state.metrics.recallPasses++;
+      recordCapability(ref, STAGE.RECALLED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
+    } else {
+      recordCapability(ref, STAGE.IMITATED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
+    }
+  } else {
+    progress.attempts = Math.min(999, progress.attempts + 1);
+    progress.lastOutcome = outcome;
+    progress.weakWord = evaluation.focusWord || "";
+    progress.updatedAt = localDateKey();
+    markActive();
   }
-  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
   saveState(false);
+  $("capabilityStatus").textContent = capabilityStageLabel(ref);
+  $("capabilityEvidence").textContent = capabilityEvidenceCopy(ref);
+  $("knownBtn").disabled = !taskCompleted(ref);
+  $("knownBtn").textContent = taskCompleted(ref) ? (taskMastered(ref) ? "已经能真实使用 · 下一句 →" : "本次通过 · 下一句 →") : "脱稿说出后继续 →";
+  renderSpeechNextActions(ref);
+  renderSpelling(ref);
+  updateAll();
 }
 
 function browserSpeechResult(serial) {
@@ -886,12 +1235,12 @@ function browserSpeechResult(serial) {
     browserSpeechCheck = recognition;
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.maxAlternatives = 5;
+    recognition.maxAlternatives = 1;
     recognition.onresult = event => {
       if (serial !== speechCheckSerial) return;
       const alternatives = Array.from(event.results[0], item => item.transcript).filter(Boolean);
       browserSpeechCheck = null;
-      resolve({ transcript: alternatives[0] || "", alternatives });
+      resolve({ transcript: alternatives[0] || "", alternatives, confidence: Number(event.results[0]?.[0]?.confidence ?? -1) });
     };
     recognition.onerror = event => {
       browserSpeechCheck = null;
@@ -908,51 +1257,107 @@ async function startSpeechRecognition() {
     return;
   }
   const serial = ++speechCheckSerial;
-  const scene = sceneById(currentSceneId);
-  const line = scene.lines[currentPhraseIndex];
-  const target = displayText(line.en);
+  const ref = currentSpeechRef();
+  const { scene, line } = ref;
+  if (!isUserLine(ref)) return;
+  if (practiceMode === "imitate" && !audioPlayedForCurrent) {
+    $("recognitionResult").textContent = "先点上面的粉色播放按钮听一遍，再开始跟说。";
+    $("lessonStartAudio").scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
+  }
+  const target = currentSpeechTarget(ref);
   const button = $("recognizeBtn");
   button.disabled = true;
   button.classList.add("listening");
-  button.textContent = "正在听…说完停一下";
-  $("recognitionResult").textContent = "现在说上面的英文。正常说完即可，不需要喊。";
+  button.textContent = "正在准备麦克风…";
+  $("recognitionResult").textContent = "正在停止 App 自己的声音，避免把示范音算成你的回答。";
   $("speechFeedback").hidden = true;
 
   try {
+    await stopAllPlayback();
+    await waitMs(420);
+    button.textContent = "正在听…说完停一下";
+    $("recognitionResult").textContent = practiceMode === "imitate" ? "现在跟着刚才的示范说。正常说完即可，不需要喊。" : "现在不看英文说出来；说完停一下。";
     const plugin = nativeSpeechCheckPlugin();
-    const result = plugin ? await plugin.check({ language: "en-US", maxResults: 5 }) : await browserSpeechResult(serial);
+    const result = plugin ? await plugin.check({ language: "en-US", maxResults: 1 }) : await browserSpeechResult(serial);
     if (serial !== speechCheckSerial || currentSceneId !== scene.id || scene.lines[currentPhraseIndex]?.id !== line.id) return;
-    const alternatives = Array.isArray(result.alternatives) && result.alternatives.length ? result.alternatives : [result.transcript];
     const ignoreWords = line.en.includes("{name}") ? [state.profile?.name || "Alex"] : [];
-    renderSpeechEvaluation(window.SaySpeechCheck.evaluate(target, alternatives, { ignoreWords }));
+    // 只用系统第一候选，避免从多个候选里挑最像答案的一项制造乐观结果。
+    renderSpeechEvaluation(window.SaySpeechCheck.evaluate(target, [result.transcript], { ignoreWords }), Number(result.confidence ?? -1));
   } catch (error) {
     if (serial !== speechCheckSerial || String(error?.message || error).includes("SPEECH_CANCELLED")) return;
     $("recognitionResult").textContent = speechCheckErrorMessage(error);
+    const code = String(error?.message || error).toUpperCase();
+    $("openMicSettings").hidden = !isNativeAndroid() || !(code.includes("PERMISSION") || code.includes("NOT-ALLOWED"));
   } finally {
     if (serial === speechCheckSerial) {
       button.disabled = false;
       button.classList.remove("listening");
-      button.textContent = "🎙 再说一次 · 重新判断";
+      button.textContent = practiceMode === "variation" ? "🎙 说出变化后的句子" : practiceMode === "recall" ? "🎙 不看英文 · 再说一次" : "🎙 再说一次 · 重新判断";
     }
   }
 }
 
-function markCurrentKnown() {
+function startRecallMode() {
+  const ref = currentSpeechRef();
+  practiceMode = "recall";
+  $("phraseEnglish").textContent = "英文已经隐藏 · 先自己想起来";
+  $("phraseEnglish").classList.add("concealed-text");
+  $("variationCue").hidden = true;
+  $("speechFeedback").hidden = true;
+  $("speechNextActions").hidden = true;
+  $("recognitionResult").textContent = `只看中文“${displayText(ref.line.zh)}”，不看英文说一次。`;
+  $("recognizeBtn").textContent = "🎙 不看英文 · 现在说";
+  $("recognizeBtn").scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function startVariationMode() {
+  const ref = currentSpeechRef();
+  const variation = PHRASE_VARIATIONS[ref.line.id];
+  if (!variation) return;
+  practiceMode = "variation";
+  $("phraseEnglish").textContent = "换一个真实信息 · 英文不显示";
+  $("phraseEnglish").classList.add("concealed-text");
+  $("variationChinese").textContent = displayText(variation.zh);
+  $("variationHint").textContent = variation.hint;
+  $("variationCue").hidden = false;
+  $("speechFeedback").hidden = true;
+  $("speechNextActions").hidden = true;
+  $("recognitionResult").textContent = "根据粉色提示换一个信息，不要重复背原句。";
+  $("recognizeBtn").textContent = "🎙 说出变化后的句子";
+  $("recognizeBtn").scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function advanceCurrentPhrase() {
   const scene = sceneById(currentSceneId);
   const line = scene.lines[currentPhraseIndex];
-  if (!state.known.includes(line.id)) {
-    state.known.push(line.id);
-    state.learnedAt[line.id] = localDateKey();
-    state.reviews[line.id] = { level: 0, due: addDays(localDateKey(), 1) };
-    registerLearned(line.id);
-    saveState();
-    toast("已进入表达库存。明天会第一次复习。");
+  const ref = { scene, line, index: currentPhraseIndex };
+  if (!taskCompleted(ref)) {
+    toast(isUserLine(ref) ? "先完成一次不看英文的开口；也可以明确选择跳过。" : "先听声音并选对主要意思；也可以明确选择跳过。");
+    const target = isUserLine(ref) ? $("recordPanel") : $("listeningCheck");
+    target.scrollIntoView({ block: "center", behavior: "smooth" });
+    return;
   }
   if (currentPhraseIndex < scene.lines.length - 1) {
     currentPhraseIndex++;
     renderPhrase();
   } else {
-    toast("这个真实场景已经走完。找机会用出一句。");
+    toast(completedSceneCount() ? "这个场景有真实能力证据了。下一次进入 AI 处理变化。" : "本轮场景走完了；未稳定的句子会在复习里回来。");
+    showLessonIndex();
+  }
+}
+
+function skipCurrentPhrase() {
+  const scene = sceneById(currentSceneId);
+  const line = scene.lines[currentPhraseIndex];
+  state.metrics.skips++;
+  markActive();
+  saveState(false);
+  toast("已跳过，不计入掌握，也不会偷偷增加进度。");
+  if (currentPhraseIndex < scene.lines.length - 1) {
+    currentPhraseIndex++;
+    renderPhrase();
+  } else {
     showLessonIndex();
   }
 }
@@ -1287,6 +1692,7 @@ function beginAiChat() {
   aiTurnCount = 0;
   aiLastResult = null;
   aiBusy = false;
+  aiInputWasSpeech = false;
   $("aiSetup").hidden = true;
   $("aiRecap").hidden = true;
   $("aiChat").hidden = false;
@@ -1303,7 +1709,7 @@ function beginAiChat() {
   $("aiUserInput").disabled = false;
   setAiBusy(false);
   $("finishAiSession").textContent = "结束这轮 · 收进记忆";
-  $("aiStatus").textContent = "轮到你。可以打字，也可以点“说给 AI 听”。";
+  $("aiStatus").textContent = `轮到你。可以打字，也可以点“说给 AI 听” · 今日还可用 ${Math.max(0, APP_AI_DAILY_LIMIT - aiTurnsToday())} 回合。`;
   setTimeout(() => $("aiUserInput").focus(), 80);
 }
 
@@ -1402,15 +1808,41 @@ function addAiVoiceControl(bubble, english) {
 
 function setAiBusy(busy) {
   aiBusy = busy;
-  $("aiSendBtn").disabled = busy || aiTurnCount >= 8;
-  $("aiMicBtn").disabled = busy || aiTurnCount >= 8;
+  const capped = aiTurnsToday() >= APP_AI_DAILY_LIMIT;
+  $("aiSendBtn").disabled = busy || aiTurnCount >= 8 || capped;
+  $("aiMicBtn").disabled = busy || aiTurnCount >= 8 || capped;
   $("aiHintBtn").disabled = busy;
   $("aiUserInput").disabled = busy || aiTurnCount >= 8;
-  $("aiSendBtn").textContent = busy ? "AI 正在接话…" : "发出去 →";
+  $("aiSendBtn").textContent = busy ? "AI 正在接话…" : capped ? "今日 AI 已到安全上限" : "发出去 →";
 }
 
 function aiMemoryTargets() {
   return [...(state.aiMemories || [])].sort((a, b) => String(a.due).localeCompare(String(b.due))).slice(0, 5);
+}
+
+function recordAiTransfer(userText) {
+  const scene = sceneById(aiSceneId);
+  if (!scene || !aiInputWasSpeech) return;
+  for (let index = 0; index < scene.lines.length; index++) {
+    const line = scene.lines[index];
+    if (!isUserLine(line)) continue;
+    const ref = { scene, line, index };
+    const target = window.SaySpeechCheck.evaluate(displayText(line.en), [userText], { ignoreWords: line.en.includes("{name}") ? [state.profile?.name || "Alex"] : [] });
+    const variation = PHRASE_VARIATIONS[line.id];
+    const varied = variation ? window.SaySpeechCheck.evaluate(displayText(variation.en), [userText], { ignoreWords: variation.en.includes("{name}") ? [state.profile?.name || "Alex"] : [] }) : null;
+    if (varied && ["pass", "understood"].includes(varied.outcome)) {
+      recordCapability(ref, STAGE.VARIED, { outcome: varied.outcome, weakWord: "" });
+      break;
+    }
+    if (["pass", "understood"].includes(target.outcome)) {
+      recordCapability(ref, STAGE.RECALLED, { outcome: target.outcome, weakWord: "" });
+      break;
+    }
+  }
+}
+
+function aiTurnsToday() {
+  return Number(state.aiUsageByDate[localDateKey()] || 0);
 }
 
 function aiErrorMessage(error) {
@@ -1427,12 +1859,18 @@ function aiErrorMessage(error) {
 
 async function submitAiTurn() {
   if (aiBusy || aiTurnCount >= 8) return;
+  if (aiTurnsToday() >= APP_AI_DAILY_LIMIT) {
+    $("aiStatus").textContent = `今天的 AI 安全上限是 ${APP_AI_DAILY_LIMIT} 回合，已经到达。基础课程、本地声音和复习仍可继续。`;
+    return;
+  }
   const userText = window.SayAi?.cleanText($("aiUserInput").value, 180) || "";
   if (!userText) {
     $("aiStatus").textContent = "先说或写一句简单英语，哪怕只有两个词也可以。";
     return;
   }
   $("aiUserInput").value = "";
+  const inputWasSpeech = aiInputWasSpeech;
+  aiInputWasSpeech = false;
   $("aiHint").hidden = true;
   $("aiCoachNote").hidden = true;
   const bubble = appendAiBubble("user", userText);
@@ -1448,12 +1886,17 @@ async function submitAiTurn() {
       history: aiHistory.slice(0, -1),
       userText,
       memories: aiMemoryTargets(),
+      learnerProfile: { interest: state.profile?.interest || "trends" },
       fetchImpl: (url, options) => fetch(url, { ...options, signal: controller.signal })
     });
     aiLastResult = result;
     aiHistory.push({ role: "model", text: result.reply_en });
     aiTurnCount++;
     state.metrics.aiTurns++;
+    state.aiUsageByDate[localDateKey()] = aiTurnsToday() + 1;
+    aiInputWasSpeech = inputWasSpeech;
+    recordAiTransfer(userText);
+    aiInputWasSpeech = false;
     const replyBubble = appendAiBubble("model", result.reply_en, result.reply_zh);
     addAiVoiceControl(replyBubble, result.reply_en);
     $("aiCoachFeedback").textContent = result.fix_to ? `${result.feedback_zh} 更自然：${result.fix_to}${result.fix_zh ? ` · ${result.fix_zh}` : ""}` : result.feedback_zh;
@@ -1465,13 +1908,14 @@ async function submitAiTurn() {
       $("aiStatus").textContent = "八个回合刚刚好。现在结束，把最好用的一句收进记忆。";
       $("finishAiSession").textContent = "完成 8 回合 · 收进记忆 →";
     } else {
-      $("aiStatus").textContent = "意思已经接住。想不到下一句时，再点提示。";
+      $("aiStatus").textContent = `意思已经接住。今天 AI 还可用 ${Math.max(0, APP_AI_DAILY_LIMIT - aiTurnsToday())} 回合。`;
     }
     saveState();
   } catch (error) {
     aiHistory.pop();
     bubble.remove();
     $("aiUserInput").value = userText;
+    aiInputWasSpeech = inputWasSpeech;
     $("aiStatus").textContent = aiErrorMessage(error);
   } finally {
     clearTimeout(timeout);
@@ -1492,29 +1936,34 @@ function showAiHint() {
   $("aiHint").hidden = false;
 }
 
-function startAiSpeechRecognition() {
+async function startAiSpeechRecognition() {
   if (aiBusy) return;
-  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Recognition) {
-    $("aiStatus").textContent = "这台手机暂不支持语音转文字，可以直接打字；课程录音仍然能用。";
-    return;
-  }
-  aiRecognition?.abort?.();
-  aiRecognition = new Recognition();
-  aiRecognition.lang = "en-US";
-  aiRecognition.interimResults = false;
-  aiRecognition.maxAlternatives = 1;
-  aiRecognition.onstart = () => {
+  $("aiMicBtn").disabled = true;
+  $("aiMicBtn").textContent = "正在准备…";
+  $("aiStatus").textContent = "正在停止 Mia 的声音，避免把 AI 自己的话当成你的回答。";
+  try {
+    await stopAllPlayback();
+    await waitMs(420);
     $("aiMicBtn").textContent = "正在听…";
-    $("aiStatus").textContent = "说一句英语，停下来后会自动填进输入框。";
-  };
-  aiRecognition.onresult = event => {
-    $("aiUserInput").value = event.results?.[0]?.[0]?.transcript || "";
-    $("aiStatus").textContent = "已经听写出来，先看一眼，再点“发出去”。";
-  };
-  aiRecognition.onerror = () => { $("aiStatus").textContent = "这次没有听清，可以重试或直接打字。"; };
-  aiRecognition.onend = () => { $("aiMicBtn").textContent = "● 说给 AI 听"; aiRecognition = null; };
-  try { aiRecognition.start(); } catch { $("aiStatus").textContent = "麦克风还没准备好，稍后再点一次。"; }
+    $("aiStatus").textContent = "说一句英语，停下来后会填进输入框；你确认后再发送。";
+    const plugin = nativeSpeechCheckPlugin();
+    let transcript = "";
+    if (plugin?.check) {
+      const result = await plugin.check({ language: "en-US", maxResults: 1 });
+      transcript = result?.transcript || "";
+    } else {
+      const result = await browserSpeechResult(++speechCheckSerial);
+      transcript = result?.transcript || "";
+    }
+    $("aiUserInput").value = transcript;
+    aiInputWasSpeech = Boolean(transcript);
+    $("aiStatus").textContent = transcript ? "这是手机听到的文字。先看一眼，可以修改或重说，再点“发出去”。" : "这次没有听到文字，可以重试或直接打字。";
+  } catch (error) {
+    $("aiStatus").textContent = speechCheckErrorMessage(error);
+  } finally {
+    $("aiMicBtn").disabled = aiBusy || aiTurnCount >= 8;
+    $("aiMicBtn").textContent = "● 说给 AI 听";
+  }
 }
 
 function storeAiMemory(result) {
@@ -1634,6 +2083,7 @@ function gradeAiMemory(grade) {
     toast("没关系，明天换个场景再碰一次。");
   }
   state.metrics.aiReviews++;
+  markActive();
   currentAiReviewId = null;
   saveState();
 }
@@ -1644,9 +2094,7 @@ function quizPool() {
   const unique = [];
   [...due, ...known].forEach(ref => { if (!unique.some(item => item.line.id === ref.line.id)) unique.push(ref); });
   if (!unique.length) return [];
-  const result = [...unique];
-  while (result.length < 5) result.push(unique[result.length % unique.length]);
-  return result.slice(0, 5);
+  return unique.slice(0, 5);
 }
 
 function startQuiz() {
@@ -1668,10 +2116,10 @@ function startQuiz() {
 }
 
 function quizModeFor(ref, index) {
-  const modes = ["translation", "listening", "spelling", "recall", "ordering"];
-  const words = cleanWords(displayText(ref.line.en));
-  if (modes[index] === "spelling" && !spellingFocus(ref)) return "translation";
-  return modes[index] === "ordering" && words.length < 2 ? "translation" : modes[index];
+  if (!isUserLine(ref)) return "listening";
+  const progress = progressFor(ref.line.id);
+  const spellingNeedsRepair = Boolean(spellingFocus(ref)) && (progress.weakWord || (state.spelling[ref.line.id]?.attempts || 0) > 0);
+  return spellingNeedsRepair && index % 3 === 2 ? "spelling" : "recall";
 }
 
 function cleanWords(text) { return text.replace(/[.,?!]/g, "").split(/\s+/).filter(Boolean); }
@@ -1684,8 +2132,9 @@ function renderQuizQuestion() {
   const mode = quizModeFor(ref, quizIndex);
   const modeNames = { translation: "看中文 · 选英文", listening: "听示范 · 选意思", spelling: "听声音 · 补拼写", ordering: "重组句子", recall: "主动回忆" };
   $("quizMode").textContent = modeNames[mode];
-  $("quizStep").textContent = `${quizIndex + 1} / 5`;
-  $("quizProgress").style.width = `${quizIndex / 5 * 100}%`;
+  const total = quizItems.length;
+  $("quizStep").textContent = `${quizIndex + 1} / ${total}`;
+  $("quizProgress").style.width = `${quizIndex / total * 100}%`;
   $("quizFeedback").textContent = "";
   $("quizPrompt").innerHTML = "";
   $("quizInteraction").innerHTML = "";
@@ -1778,16 +2227,46 @@ function renderOrderingQuestion(ref) {
 
 function renderRecallQuestion(ref) {
   $("quizPrompt").innerHTML = `<div><small>先在心里或大声说出来</small><strong>${escapeHtml(displayText(ref.line.zh))}</strong></div>`;
-  $("quizInteraction").innerHTML = `<button class="button light full" id="revealAnswer" type="button">想好后，显示答案</button>`;
-  $("revealAnswer").addEventListener("click", () => {
-    $("quizInteraction").innerHTML = `<div class="recall-answer"><strong lang="en">${escapeHtml(displayText(ref.line.en))}</strong><span>${escapeHtml(displayText(ref.line.zh))}</span></div><div class="self-grade"><button class="button light" type="button" data-grade="false">还不熟</button><button class="button acid-button" type="button" data-grade="true">我记得</button></div>`;
-    $("quizInteraction").querySelectorAll("[data-grade]").forEach(button => button.addEventListener("click", () => {
-      if (quizLocked) return;
-      quizLocked = true;
-      const correct = button.dataset.grade === "true";
-      finishQuizAnswer(correct, ref, correct ? "主动想起来了。" : "没关系，明天会更早再见到它。", 500);
-    }));
-  });
+  $("quizInteraction").innerHTML = `<button class="button acid-button full" id="quizSpeakRecall" type="button">🎙 不看英文 · 现在说</button><button class="text-button full" id="revealAnswer" type="button">语音不可用 · 改用诚实自评</button>`;
+  $("quizSpeakRecall").addEventListener("click", () => startQuizSpeechRecall(ref));
+  $("revealAnswer").addEventListener("click", () => renderQuizRecallFallback(ref));
+}
+
+async function startQuizSpeechRecall(ref) {
+  if (quizLocked) return;
+  const button = $("quizSpeakRecall");
+  button.disabled = true;
+  button.textContent = "正在准备麦克风…";
+  try {
+    await stopAllPlayback();
+    await waitMs(420);
+    button.textContent = "正在听…说完停一下";
+    const plugin = nativeSpeechCheckPlugin();
+    const result = plugin ? await plugin.check({ language: "en-US", maxResults: 1 }) : await browserSpeechResult(++speechCheckSerial);
+    const evaluation = window.SaySpeechCheck.evaluate(displayText(ref.line.en), [result.transcript], { ignoreWords: ref.line.en.includes("{name}") ? [state.profile?.name || "Alex"] : [] });
+    const lowConfidence = Number(result.confidence ?? -1) >= 0 && Number(result.confidence) < 0.35;
+    const correct = !lowConfidence && ["pass", "understood"].includes(evaluation.outcome);
+    quizLocked = true;
+    if (correct) {
+      recordCapability(ref, STAGE.RECALLED, { outcome: evaluation.outcome, weakWord: "" });
+      state.metrics.recallPasses++;
+    }
+    $("quizInteraction").innerHTML = `<div class="recall-answer"><small>手机听到</small><strong lang="en">${escapeHtml(evaluation.transcript || "—")}</strong></div>`;
+    finishQuizAnswer(correct, ref, correct ? "不看英文也说出来了。" : (lowConfidence ? "这次系统判断不确定，不算通过。" : `这次重点再练：${evaluation.focusWord || displayText(ref.line.en)}`), 900);
+  } catch {
+    renderQuizRecallFallback(ref);
+  }
+}
+
+function renderQuizRecallFallback(ref) {
+  $("quizInteraction").innerHTML = `<div class="recall-answer"><strong lang="en">${escapeHtml(displayText(ref.line.en))}</strong><span>${escapeHtml(displayText(ref.line.zh))}</span></div><div class="self-grade"><button class="button light" type="button" data-grade="false">刚才没说出来</button><button class="button acid-button" type="button" data-grade="true">刚才确实说出来了</button></div>`;
+  $("quizInteraction").querySelectorAll("[data-grade]").forEach(button => button.addEventListener("click", () => {
+    if (quizLocked) return;
+    quizLocked = true;
+    const correct = button.dataset.grade === "true";
+    if (correct) recordCapability(ref, STAGE.RECALLED, { outcome: "understood" });
+    finishQuizAnswer(correct, ref, correct ? "按你的诚实自评记录为主动想起。" : "没关系，明天会更早再见到它。", 500);
+  }));
 }
 
 function scheduleReview(ref, correct, elapsedMs) {
@@ -1813,23 +2292,32 @@ function finishQuizAnswer(correct, ref, message, delay = 1100) {
   saveState(false);
   setTimeout(() => {
     quizIndex++;
-    if (quizIndex < 5) renderQuizQuestion();
+    if (quizIndex < quizItems.length) renderQuizQuestion();
     else finishQuiz();
   }, delay);
 }
 
 function finishQuiz() {
+  const total = quizItems.length || 1;
+  const ratio = quizScore / total;
   $("quizBox").hidden = true;
   $("resultBox").hidden = false;
-  $("resultScore").textContent = `${quizScore}/5`;
-  $("resultMessage").textContent = quizScore === 5 ? "状态拉满。现在选一句，今天真的用出去。" : quizScore >= 3 ? "记忆正在变稳。答错的表达会更早回来。" : "不需要硬背；跟读一遍，明天再见。";
-  state.best = Math.max(state.best || 0, quizScore);
+  $("resultScore").textContent = `${quizScore}/${total}`;
+  $("resultMessage").textContent = ratio === 1 ? "状态拉满。现在选一句，今天真的用出去。" : ratio >= .6 ? "记忆正在变稳。答错的表达会更早回来。" : "不需要硬背；跟读一遍，明天再见。";
+  const previousTotal = state.bestTotal || 5;
+  const previousRatio = (state.best || 0) / previousTotal;
+  if (!state.best || ratio > previousRatio || (ratio === previousRatio && total > previousTotal)) {
+    state.best = quizScore;
+    state.bestTotal = total;
+  }
   state.metrics.quizzes++;
-  if (!state.metrics.activeDates.includes(localDateKey())) state.metrics.activeDates.push(localDateKey());
+  markActive();
   saveState();
 }
 
 function exportProgress() {
+  state.lastBackupAt = localDateKey();
+  saveState(false);
   const payload = { app: "十一说", appId: "com.say01.english", version: APP_VERSION, exportedAt: new Date().toISOString(), state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -1936,6 +2424,65 @@ function toast(message) {
   toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
 }
 
+async function openMicrophoneSettings() {
+  const plugin = nativeSpeechCheckPlugin();
+  if (!plugin?.openAppSettings) {
+    toast("请到手机设置 → 应用 → 十一说 → 权限 → 麦克风开启。");
+    return;
+  }
+  try { await plugin.openAppSettings(); } catch { toast("请手动到系统应用权限里开启麦克风。"); }
+}
+
+async function runDiagnostics() {
+  const button = $("runDiagnostics");
+  button.disabled = true;
+  button.textContent = "正在检查…";
+  await ensureNativeAiConnection();
+  const results = { audio: "可用", speech: "不可用", voice: "仅 Android APK", ai: "未连接" };
+  results.audio = nativeAudioPlugin() || typeof Audio !== "undefined" ? "可用" : "不可用";
+  try {
+    const status = await nativeSpeechCheckPlugin()?.status?.();
+    results.speech = status?.available ? "Android 原生识别可用" : ((window.SpeechRecognition || window.webkitSpeechRecognition) ? "网页识别可用" : "不可用");
+  } catch { results.speech = "检查失败"; }
+  try {
+    const status = await localAiVoicePlugin()?.status?.();
+    results.voice = status?.available ? (status.initialized ? "本地少女声已预热" : "本地少女声可用 · 首次需准备") : "当前设备不可用";
+  } catch { results.voice = "当前设备不可用"; }
+  if (aiIsConfigured()) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(aiSettings.proxyUrl, { headers: window.SayAi.connectionHeaders(aiSettings), signal: controller.signal });
+      results.ai = response.ok ? `百炼已连通 · 今日 ${aiTurnsToday()}/${APP_AI_DAILY_LIMIT} 回合` : `连接异常 ${response.status}`;
+    } catch { results.ai = "暂时无法连通"; }
+    clearTimeout(timeout);
+  }
+  $("diagnosticList").innerHTML = `<span>课程音频：${results.audio}</span><span>手机语音识别：${results.speech}</span><span>本地少女声：${results.voice}</span><span>百炼 AI：${results.ai}</span>`;
+  diagnosticText = `十一说 V${APP_VERSION} (${BUILD_DATE})\n课程音频：${results.audio}\n手机语音识别：${results.speech}\n本地少女声：${results.voice}\n百炼 AI：${results.ai}\n平台：${isNativeAndroid() ? "Android APK" : navigator.userAgent}`;
+  state.metrics.diagnosticRuns++;
+  saveState(false);
+  button.disabled = false;
+  button.textContent = "重新检查当前手机";
+}
+
+async function copyDiagnostics() {
+  if (!diagnosticText) await runDiagnostics();
+  try {
+    await navigator.clipboard.writeText(diagnosticText);
+    toast("诊断信息已复制，不包含 API Key、访问口令或识别文字。");
+  } catch {
+    toast("系统不允许自动复制，可以截图这一块发给我。");
+  }
+}
+
+function showVersionNotice() {
+  if (state.lastSeenVersion === APP_VERSION) return;
+  $("updateBanner").dataset.mode = "version";
+  $("updateBanner").querySelector("span").textContent = `V${APP_VERSION}：进度只认真实开口证据`;
+  $("reloadUpdate").textContent = "知道了";
+  $("updateBanner").hidden = false;
+}
+
 function setupOnboarding() {
   if (state.profile) return;
   $("onboarding").hidden = false;
@@ -1955,21 +2502,24 @@ function selectExclusive(container, button, selector) {
 function finishOnboarding() {
   const goal = $("onboardingGoals").querySelector(".selected").dataset.goal;
   const minutes = Number($("onboardingTimes").querySelector(".selected").dataset.minutes);
+  const interest = $("onboardingInterests").querySelector(".selected").dataset.interest;
   const name = cleanName($("onboardingName").value) || "Alex";
-  state.profile = { name, goal, minutes };
+  state.profile = { name, goal, minutes, interest: INTEREST_LABELS[interest] ? interest : "trends" };
   $("onboarding").hidden = true;
   $("app").inert = false;
   $("app").removeAttribute("aria-hidden");
   document.body.classList.remove("modal-open");
   saveState();
+  showVersionNotice();
   toast(`${name}，先从今天最能用的一句开始。`);
 }
 
 function saveSettings() {
-  state.profile = state.profile || { name: "Alex", goal: "daily", minutes: 5 };
+  state.profile = state.profile || { name: "Alex", goal: "daily", minutes: 5, interest: "trends" };
   state.profile.name = cleanName($("profileName").value) || "Alex";
   state.profile.goal = $("goalSelect").value;
   state.profile.minutes = Number($("minutesSelect").value);
+  state.profile.interest = $("interestSelect").value;
   state.rate = Number($("rateSelect").value);
   saveState();
   toast("学习节奏已更新。");
@@ -1982,7 +2532,8 @@ function bindEvents() {
   $("nextSceneBtn").addEventListener("click", event => openScene(event.currentTarget.dataset.scene, 0));
   $("backToLessons").addEventListener("click", showLessonIndex);
   $("prevPhrase").addEventListener("click", () => { if (currentPhraseIndex > 0) { currentPhraseIndex--; renderPhrase(); } else showLessonIndex(); });
-  $("knownBtn").addEventListener("click", markCurrentKnown);
+  $("knownBtn").addEventListener("click", advanceCurrentPhrase);
+  $("skipPhrase").addEventListener("click", skipCurrentPhrase);
   $("slowSoundBtn").addEventListener("click", () => speakCurrent(.72));
   $("normalSoundBtn").addEventListener("click", () => speakCurrent(1));
   $("lessonStartAudio").addEventListener("click", () => speakCurrent(1));
@@ -1991,6 +2542,9 @@ function bindEvents() {
   $("compareBtn").addEventListener("click", compareRecording);
   document.querySelectorAll("[data-record-grade]").forEach(button => button.addEventListener("click", () => gradeRecording(button.dataset.recordGrade)));
   $("recognizeBtn").addEventListener("click", startSpeechRecognition);
+  $("startRecallBtn").addEventListener("click", startRecallMode);
+  $("startVariationBtn").addEventListener("click", startVariationMode);
+  $("openMicSettings").addEventListener("click", openMicrophoneSettings);
   $("startRoleplay").addEventListener("click", openRoleplay);
   $("closeRoleplay").addEventListener("click", () => cleanupRoleplay(true));
   $("roleFinish").addEventListener("click", () => cleanupRoleplay(true));
@@ -2014,6 +2568,7 @@ function bindEvents() {
   $("aiUserInput").addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitAiTurn(); }
   });
+  $("aiUserInput").addEventListener("input", event => { if (event.isTrusted) aiInputWasSpeech = false; });
   $("finishAiSession").addEventListener("click", finishAiSession);
   $("closeAiRecap").addEventListener("click", closeAiCoach);
   $("configureAiBtn").addEventListener("click", () => openAiCoach(true));
@@ -2028,6 +2583,8 @@ function bindEvents() {
   $("importBtn").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", event => { if (event.target.files[0]) importProgress(event.target.files[0]); });
   $("calendarBtn").addEventListener("click", createCalendarReminder);
+  $("runDiagnostics").addEventListener("click", runDiagnostics);
+  $("copyDiagnostics").addEventListener("click", copyDiagnostics);
   $("resetBtn").addEventListener("click", () => {
     if (!confirm("确定清空全部学习记录吗？建议先导出一份备份。")) return;
     state = emptyState();
@@ -2048,8 +2605,17 @@ function bindEvents() {
   });
   $("onboardingGoals").querySelectorAll("[data-goal]").forEach(button => button.addEventListener("click", () => selectExclusive($("onboardingGoals"), button, "[data-goal]")));
   $("onboardingTimes").querySelectorAll("[data-minutes]").forEach(button => button.addEventListener("click", () => selectExclusive($("onboardingTimes"), button, "[data-minutes]")));
+  $("onboardingInterests").querySelectorAll("[data-interest]").forEach(button => button.addEventListener("click", () => selectExclusive($("onboardingInterests"), button, "[data-interest]")));
   $("finishOnboarding").addEventListener("click", finishOnboarding);
-  $("reloadUpdate").addEventListener("click", () => location.reload());
+  $("reloadUpdate").addEventListener("click", () => {
+    if ($("updateBanner").dataset.mode === "version") {
+      state.lastSeenVersion = APP_VERSION;
+      saveState(false);
+      $("updateBanner").hidden = true;
+      return;
+    }
+    location.reload();
+  });
   window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); deferredInstall = event; });
   window.addEventListener("beforeunload", () => { cleanupRecording(); cleanupRoleplay(false); aiRecognition?.abort?.(); });
 }
@@ -2062,7 +2628,12 @@ function setupServiceWorker() {
     registration.addEventListener("updatefound", () => {
       const worker = registration.installing;
       worker?.addEventListener("statechange", () => {
-        if (worker.state === "installed" && navigator.serviceWorker.controller) $("updateBanner").hidden = false;
+        if (worker.state === "installed" && navigator.serviceWorker.controller) {
+          $("updateBanner").dataset.mode = "update";
+          $("updateBanner").querySelector("span").textContent = "新版已经准备好";
+          $("reloadUpdate").textContent = "立即更新";
+          $("updateBanner").hidden = false;
+        }
       });
     });
   }).catch(() => {});
@@ -2076,8 +2647,10 @@ function initialize() {
   saveState(false);
   updateAll();
   setupOnboarding();
+  if (state.profile) showVersionNotice();
   setupServiceWorker();
   void ensureNativeAiConnection();
+  if (isNativeAndroid()) setTimeout(() => localAiVoicePlugin()?.warmup?.().catch(() => {}), 1800);
   if ("speechSynthesis" in window) window.speechSynthesis.addEventListener?.("voiceschanged", selectVoice, { once: true });
 }
 

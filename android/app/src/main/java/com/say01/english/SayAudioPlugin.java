@@ -65,6 +65,16 @@ public class SayAudioPlugin extends Plugin {
         });
     }
 
+    @PluginMethod
+    public void stop(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            finishPending(false);
+            JSObject result = new JSObject();
+            result.put("ok", true);
+            call.resolve(result);
+        });
+    }
+
     private void finishPending(boolean ok) {
         if (player != null) {
             player.setOnCompletionListener(null);

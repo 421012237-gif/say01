@@ -59,6 +59,21 @@ public class SayLocalVoicePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void warmup(PluginCall call) {
+        speechExecutor.execute(() -> {
+            try {
+                ensureTts();
+                JSObject result = new JSObject();
+                result.put("ok", true);
+                result.put("initialized", true);
+                mainHandler.post(() -> call.resolve(result));
+            } catch (Throwable error) {
+                rejectOnMain(call, "LOCAL_TTS_WARMUP_FAILED", error);
+            }
+        });
+    }
+
+    @PluginMethod
     public void speak(PluginCall call) {
         String text = sanitize(call.getString("text", ""));
         if (text.isEmpty()) {
