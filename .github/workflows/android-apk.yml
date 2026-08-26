@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-debug-apk:
@@ -84,3 +84,17 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Create private-test draft download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v2.6.0-private-test-20260826"
+          ASSET="android/app/build/outputs/apk/debug/app-debug.apk#ElevenSays-Android-V2.6.0-Real-Ability.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" --clobber
+          else
+            gh release create "$TAG" "$ASSET" --draft \
+              --title "十一说 V2.6.0 · 真实能力私人自测" \
+              --notes "私人自测版：能力证据进阶、听辨与脱稿复述、跟读判断、百炼 AI 文字陪练、本地少女声。请直接覆盖安装 V2.5，勿先卸载。"
+          fi
