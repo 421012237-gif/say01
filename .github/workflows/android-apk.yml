@@ -61,17 +61,14 @@ jobs:
         run: ./gradlew assembleDebug
 
       - name: Verify APK signature and upgrade compatibility
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
           "$APKSIGNER_PATH" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
-          mkdir -p previous-apk
-          gh release download v2.5.0-private-test-20260826 --pattern '*.apk' --dir previous-apk
-          OLD_CERT="$("$APKSIGNER_PATH" verify --print-certs previous-apk/*.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
-          NEW_CERT="$("$APKSIGNER_PATH" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1)"
-          test -n "$OLD_CERT"
-          test "$OLD_CERT" = "$NEW_CERT"
+          EXPECTED_CERT="abb831763b8c11f6000b3cdc69cecae420f7dc1ea3d103592531f7d6548e4c56"
+          NEW_CERT="$("$APKSIGNER_PATH" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr 'A-F' 'a-f')"
+          test -n "$NEW_CERT"
+          test "$EXPECTED_CERT" = "$NEW_CERT"
+          echo "APK signature matches the installed V2.5 update certificate."
 
       - name: Upload Eleven Says APK
         uses: actions/upload-artifact@v7
