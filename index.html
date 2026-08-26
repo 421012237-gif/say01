@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=2.6.0">
+  <link rel="stylesheet" href="styles.css?v=2.7.0">
   <title>十一说｜先开口，自然记住</title>
 </head>
 <body>
@@ -195,8 +195,8 @@
           <div class="lesson-heading"><div><span class="micro" id="lessonNumber">SCENE 01</span><h2 id="lessonName">咖啡店点单</h2></div><span class="lesson-step" id="lessonStep">1 / 5</span></div>
           <div class="context-strip"><span>情境</span><p id="lessonContext"></p></div>
           <div class="capability-strip" id="capabilityStrip"><span id="phraseTaskType">今天练什么</span><strong id="capabilityStatus">还没开始</strong><small id="capabilityEvidence">跟着唯一主按钮走就行</small></div>
-          <div class="lesson-steps" id="lessonSteps" aria-label="本句练习顺序"><span><b>1</b>先听</span><span><b>2</b>完成判断</span><span><b>3</b>继续</span></div>
-          <button class="lesson-start-audio" type="button" id="lessonStartAudio"><span>STEP 1 / LISTEN</span><strong>点这里，先听一遍</strong><small>听不到时按手机侧边音量＋，再点一次</small><b aria-hidden="true">▶</b></button>
+          <div class="lesson-steps" id="lessonSteps" aria-label="现在只做的一步"><span><b>1</b>这次只做：听一句</span></div>
+          <button class="lesson-start-audio" type="button" id="lessonStartAudio"><span id="lessonAudioStep">ONE MOVE / LISTEN</span><strong id="lessonAudioTitle">点这里，先听一遍</strong><small id="lessonAudioHint">现在不用记，也不用找下一步</small><b aria-hidden="true">▶</b></button>
           <p class="audio-status" id="audioStatus" aria-live="polite">等待播放</p>
           <section class="listening-check" id="listeningCheck" hidden aria-labelledby="listeningTitle">
             <span>LISTEN / MEANING</span>
@@ -211,7 +211,7 @@
             <div class="english" lang="en" id="phraseEnglish">A coffee, please.</div>
             <div class="chinese" id="phraseChinese">请给我一杯咖啡。</div>
             <details class="pronunciation" id="pronunciationDetails"><summary>发音辅助 <span>需要时再看</span></summary><div class="rhythm" id="phraseRhythm" lang="en"></div><p id="phrasePronounce"></p><small>中文近似音只帮助第一次开口，最终以英文示范发音为准。</small></details>
-            <div class="audio-actions"><button class="button acid-button" type="button" id="normalSoundBtn">▶ 再听正常示范</button><button class="button dark-outline" type="button" id="slowSoundBtn">▶ 听慢速</button></div>
+            <details class="listen-tools" id="listenTools" hidden><summary>没听清？再听或放慢 <span>可选</span></summary><div class="audio-actions"><button class="button acid-button" type="button" id="normalSoundBtn">▶ 再听正常示范</button><button class="button dark-outline" type="button" id="slowSoundBtn">▶ 听慢速</button></div></details>
             <section class="spell-lock" id="spellLock" aria-labelledby="spellTitle" hidden>
               <span class="spell-deco" aria-hidden="true">LOCK</span>
               <div class="spell-head"><span>WORD LOCK / 拼写暗线</span><small id="spellLevel">第 1 次遇见</small></div>
@@ -225,7 +225,7 @@
             </section>
             <div class="use-note"><span>什么时候用</span><p id="phraseWhen"></p></div>
           </article>
-          <section class="record-panel" id="recordPanel" aria-labelledby="recordTitle">
+          <section class="record-panel" id="recordPanel" aria-labelledby="recordTitle" hidden>
             <div><span class="micro">SPEAK / CHECK</span><h3 id="recordTitle">说一句，马上知道能不能听懂</h3></div>
             <p>不打虚假发音分。只判断手机有没有听清、表达是否可懂，一次只提醒一个词。</p>
             <div class="recognition-box">
@@ -236,11 +236,6 @@
                 <div class="speech-word-diff" id="speechWordDiff" lang="en"></div>
                 <p id="speechNextStep"></p>
               </div>
-              <div class="speech-next-actions" id="speechNextActions" hidden>
-                <button class="button light" type="button" id="startRecallBtn">隐藏英文 · 再说一次</button>
-                <button class="button acid-button" type="button" id="startVariationBtn">换一个真实信息</button>
-              </div>
-              <div class="variation-cue" id="variationCue" hidden><span>REAL SWITCH / 换一种说法</span><strong id="variationChinese"></strong><small id="variationHint"></small></div>
               <button class="text-button" type="button" id="openMicSettings" hidden>去系统设置打开麦克风</button>
             </div>
             <details class="recording-tools">
@@ -252,8 +247,8 @@
               <div class="self-grade recording-grade" id="recordingGrade" hidden><button class="button light" type="button" data-record-grade="again">还要再练</button><button class="button acid-button" type="button" data-record-grade="close">感觉接近了</button></div>
             </details>
           </section>
-          <div class="mission-note"><span>TODAY'S MOVE</span><p id="phraseMission"></p></div>
-          <div class="lesson-controls"><button class="button light" type="button" id="prevPhrase">← 上一句</button><button class="button acid-button" type="button" id="knownBtn" disabled>完成当前任务后继续 →</button></div>
+          <details class="mission-note"><summary>今天想加练？ <span>可选</span></summary><p id="phraseMission"></p></details>
+          <div class="lesson-controls single-action" id="lessonControls"><button class="button light" type="button" id="prevPhrase">← 上一句</button><button class="button acid-button" type="button" id="knownBtn" hidden>本句完成 · 下一句 →</button></div>
           <button class="text-button skip-phrase" type="button" id="skipPhrase">这次先跳过，不计入掌握</button>
           <details class="transcript" id="dialogueDetails"><summary>需要时查看完整微对话 <span>展开</span></summary><div id="dialogueTranscript"></div></details>
           <button class="roleplay-entry" type="button" id="startRoleplay"><span>学完本场景后再来</span><strong>进入完整角色扮演</strong><small>系统演对方，你来回答自己的台词</small><b aria-hidden="true">↗</b></button>
@@ -308,7 +303,7 @@
         </section>
         <section class="panel settings-panel diagnostics-panel" aria-labelledby="diagnosticsTitle">
           <h2 id="diagnosticsTitle">版本与运行诊断</h2>
-          <p><strong id="appVersionLabel">V2.6.0</strong> · <span id="buildDateLabel">2026-08-26</span></p>
+          <p><strong id="appVersionLabel">V2.7.0</strong> · <span id="buildDateLabel">2026-08-26</span></p>
           <div class="diagnostic-list" id="diagnosticList"><span>课程音频：待检查</span><span>手机语音识别：待检查</span><span>本地少女声：待检查</span><span>百炼 AI：待检查</span></div>
           <button class="button light full" type="button" id="runDiagnostics">一键检查当前手机</button>
           <button class="text-button full" type="button" id="copyDiagnostics">复制诊断信息</button>
@@ -327,8 +322,8 @@
     <nav class="bottom-nav" aria-label="主导航"><button class="nav-button active" type="button" data-view="home"><span aria-hidden="true">01</span>首页</button><button class="nav-button" type="button" data-view="lessons"><span aria-hidden="true">02</span>场景</button><button class="nav-button" type="button" data-view="practice"><span aria-hidden="true">03</span>复习</button><button class="nav-button" type="button" data-view="profile"><span aria-hidden="true">04</span>我的</button></nav>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script src="ai-coach.js?v=2.6.0" defer></script>
-  <script src="speech-check.js?v=2.6.0" defer></script>
-  <script src="app.js?v=2.6.0" defer></script>
+  <script src="ai-coach.js?v=2.7.0" defer></script>
+  <script src="speech-check.js?v=2.7.0" defer></script>
+  <script src="app.js?v=2.7.0" defer></script>
 </body>
 </html>

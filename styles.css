@@ -1338,3 +1338,66 @@ main { padding: 0 0 calc(78px + env(safe-area-inset-bottom)); }
   .ai-setup h2, .ai-recap h2 { font-size: 55px; }
   .ai-orbit { right: -100px; }
 }
+
+/* V2.7 / ONE-MOVE LESSON FLOW */
+.lesson-steps {
+  margin: 18px 0 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.lesson-steps span {
+  min-height: 44px;
+  padding: 0 13px;
+  border-left: 2px solid var(--acid);
+  background: linear-gradient(90deg, rgba(255,43,214,.13), transparent 78%);
+  color: var(--paper);
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+.lesson-steps span.done { color: var(--acid); }
+.lesson-start-audio { transition: min-height .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease; }
+.lesson-start-audio.completed {
+  min-height: 64px;
+  border: 1px solid rgba(255,43,214,.62);
+  background: rgba(255,43,214,.065);
+  color: var(--paper);
+  box-shadow: none;
+}
+.lesson-start-audio.completed small { color: var(--muted); }
+.lesson-start-audio.completed > b { width: 38px; height: 38px; border-color: var(--acid); color: var(--acid); font-size: 15px; }
+.listen-tools {
+  margin: 15px 0 0;
+  border-top: 1px solid rgba(255,255,255,.13);
+}
+.listen-tools summary {
+  min-height: 48px;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--silver);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  list-style: none;
+}
+.listen-tools summary::-webkit-details-marker { display: none; }
+.listen-tools summary span { color: var(--muted); font-size: 10px; font-weight: 500; }
+.listen-tools .audio-actions { padding: 0 0 13px; }
+.mission-note { width: 82%; margin: 27px 0 28px auto; padding: 0 0 0 17px; }
+.mission-note summary {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--silver);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  list-style: none;
+}
+.mission-note summary::-webkit-details-marker { display: none; }
+.mission-note summary span { margin: 0; color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0; }
+.mission-note p { padding: 2px 0 15px; }
+.lesson-controls.single-action { grid-template-columns: 1fr; }
+.lesson-controls.single-action #prevPhrase { width: 46%; justify-self: start; }

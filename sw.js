@@ -1,4 +1,4 @@
-const CACHE = "say01-runtime-v2.6.0";
+const CACHE = "say01-runtime-v2.7.0";
 const SENTENCE_AUDIO_IDS = [
   "cafe-1", "cafe-2", "cafe-3", "cafe-4", "cafe-5",
   "travel-1", "travel-2", "travel-3", "travel-4", "travel-5",

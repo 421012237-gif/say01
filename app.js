@@ -1,4 +1,4 @@
-const APP_VERSION = "2.6.0";
+const APP_VERSION = "2.7.0";
 const BUILD_DATE = "2026-08-26";
 const STORAGE_KEY = "xiaobai-english-v2";
 const LEGACY_KEY = "xiaobai-english-v1";
@@ -286,7 +286,7 @@ function sanitizeState(raw) {
   });
   Object.entries(merged.phraseProgress).forEach(([id, progress]) => {
     const ref = phraseRefById(id);
-    const required = ref?.line?.speaker === "YOU" ? STAGE.RECALLED : STAGE.HEARD;
+    const required = ref?.line?.speaker === "YOU" ? STAGE.IMITATED : STAGE.HEARD;
     if (progress.stage >= required && !merged.known.includes(id)) merged.known.push(id);
   });
   return merged;
@@ -337,9 +337,9 @@ let recordingUrl = null;
 let speechCheckSerial = 0;
 let browserSpeechCheck = null;
 let activeOriginalAudio = null;
-let practiceMode = "imitate";
 let audioPlayedForCurrent = false;
 let listeningUnlockedForCurrent = false;
+let autoAdvanceTimer = null;
 let questionStartedAt = 0;
 let roleSceneId = null;
 let roleIndex = 0;
@@ -432,7 +432,7 @@ function isUserLine(refOrLine) {
 }
 
 function requiredStage(refOrLine) {
-  return isUserLine(refOrLine) ? STAGE.RECALLED : STAGE.HEARD;
+  return isUserLine(refOrLine) ? STAGE.IMITATED : STAGE.HEARD;
 }
 
 function taskCompleted(ref) {
@@ -440,7 +440,7 @@ function taskCompleted(ref) {
 }
 
 function taskMastered(ref) {
-  return progressFor(ref.line.id).stage >= (isUserLine(ref) && PHRASE_VARIATIONS[ref.line.id] ? STAGE.VARIED : requiredStage(ref));
+  return progressFor(ref.line.id).stage >= (isUserLine(ref) ? STAGE.RECALLED : STAGE.HEARD);
 }
 
 function completedSceneCount() {
@@ -656,6 +656,28 @@ function openScene(sceneId, phraseIndex = 0) {
   renderPhrase();
 }
 
+function clearAutoAdvance() {
+  if (!autoAdvanceTimer) return;
+  clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = null;
+}
+
+function queueAutoAdvance(ref, message, delay = 1050) {
+  clearAutoAdvance();
+  const sceneId = ref.scene.id;
+  const lineId = ref.line.id;
+  $("lessonSteps").innerHTML = `<span class="done"><b>✓</b>${escapeHtml(message)}</span>`;
+  $("knownBtn").hidden = false;
+  $("knownBtn").disabled = false;
+  $("knownBtn").textContent = "不等了 · 直接下一句 →";
+  $("lessonControls").classList.remove("single-action");
+  autoAdvanceTimer = setTimeout(() => {
+    autoAdvanceTimer = null;
+    const current = sceneById(currentSceneId)?.lines?.[currentPhraseIndex];
+    if (currentSceneId === sceneId && current?.id === lineId) advanceCurrentPhrase();
+  }, delay);
+}
+
 function renderPhrase() {
   cleanupRecording();
   const scene = sceneById(currentSceneId);
@@ -663,8 +685,8 @@ function renderPhrase() {
   const ref = { scene, line, index: currentPhraseIndex };
   const progress = progressFor(line.id);
   const userTurn = isUserLine(line);
-  practiceMode = "imitate";
-  audioPlayedForCurrent = progress.stage >= STAGE.IMITATED;
+  const taskDone = taskCompleted(ref);
+  audioPlayedForCurrent = userTurn ? progress.stage >= STAGE.IMITATED : progress.stage >= STAGE.HEARD;
   listeningUnlockedForCurrent = progress.stage >= STAGE.HEARD;
   $("lessonNumber").textContent = `SCENE ${String(orderedScenes().indexOf(scene) + 1).padStart(2, "0")}`;
   $("lessonName").textContent = scene.title;
@@ -673,9 +695,11 @@ function renderPhrase() {
   $("speakerBadge").textContent = line.speaker;
   $("phraseIndex").textContent = `LINE ${String(currentPhraseIndex + 1).padStart(2, "0")}`;
   $("phraseTaskType").textContent = userTurn ? "YOUR TURN / 轮到你开口" : "LISTEN FIRST / 先听懂对方";
-  $("lessonSteps").innerHTML = userTurn
-    ? "<span><b>1</b>听示范</span><span><b>2</b>跟读检查</span><span><b>3</b>隐藏英文说</span>"
-    : "<span><b>1</b>听对方</span><span><b>2</b>选主要意思</span><span><b>3</b>继续</span>";
+  $("lessonSteps").innerHTML = taskDone
+    ? "<span class=\"done\"><b>✓</b>今天已完成 · 脱稿明天回来</span>"
+    : audioPlayedForCurrent
+      ? `<span><b>1</b>这次只做：${userTurn ? "说一句" : "选意思"}</span>`
+      : "<span><b>1</b>这次只做：听一句</span>";
   $("capabilityStatus").textContent = capabilityStageLabel(ref);
   $("capabilityEvidence").textContent = capabilityEvidenceCopy(ref);
   $("phraseEnglish").classList.toggle("concealed-text", userTurn ? !audioPlayedForCurrent : !listeningUnlockedForCurrent);
@@ -690,21 +714,24 @@ function renderPhrase() {
   $("phraseWhen").textContent = line.when;
   $("phraseMission").textContent = personalizedMission(ref);
   $("prevPhrase").textContent = currentPhraseIndex ? "← 上一句" : "← 场景表";
-  $("knownBtn").disabled = !taskCompleted(ref);
-  $("knownBtn").textContent = taskCompleted(ref)
-    ? (!userTurn ? "听懂主要意思 · 下一句 →" : (taskMastered(ref) ? "已经能真实使用 · 下一句 →" : "本次通过 · 下一句 →"))
-    : (userTurn ? "脱稿说出后继续 →" : "选对主要意思后继续 →");
+  $("knownBtn").hidden = !taskDone;
+  $("knownBtn").disabled = !taskDone;
+  $("knownBtn").textContent = userTurn ? "第一次开口完成 · 下一句 →" : "听懂主要意思 · 下一句 →";
+  $("lessonControls").classList.toggle("single-action", !taskDone);
+  $("lessonStartAudio").classList.toggle("completed", audioPlayedForCurrent);
+  $("lessonAudioStep").textContent = taskDone ? "DONE TODAY" : audioPlayedForCurrent ? "LISTENED / OPTIONAL" : "ONE MOVE / LISTEN";
+  $("lessonAudioTitle").textContent = taskDone ? "本句已完成 · 想听还能再听" : audioPlayedForCurrent ? "再听一次示范" : "点这里，先听一遍";
+  $("lessonAudioHint").textContent = taskDone ? "脱稿和变化表达会在之后自然回来" : audioPlayedForCurrent ? "不必重复，继续做屏幕上唯一的新动作" : "现在不用记，也不用找下一步";
   $("audioStatus").textContent = ["social-1", "work-1"].includes(line.id) ? "示范会在名字处停一下，轮到你说自己的名字" : "等待播放";
   $("pronunciationDetails").open = false;
-  $("recordPanel").hidden = !userTurn;
-  $("listeningCheck").hidden = userTurn;
-  $("speechNextActions").hidden = true;
-  $("variationCue").hidden = true;
+  $("listenTools").hidden = !audioPlayedForCurrent;
+  $("listenTools").open = false;
+  $("recordPanel").hidden = !userTurn || !audioPlayedForCurrent || taskDone;
+  $("listeningCheck").hidden = userTurn || !audioPlayedForCurrent || taskDone;
   $("openMicSettings").hidden = true;
   if (userTurn) {
-    $("recordTitle").textContent = progress.stage >= STAGE.IMITATED ? "现在不看英文，再说一次" : "说一句，马上知道手机有没有听清";
-    $("recognizeBtn").textContent = progress.stage >= STAGE.IMITATED ? "🎙 先跟读检查" : "🎙 说一句 · 马上判断";
-    renderSpeechNextActions(ref);
+    $("recordTitle").textContent = "跟着说一次，马上知道手机有没有听清";
+    $("recognizeBtn").textContent = "🎙 说一句 · 马上判断";
   } else {
     renderListeningCheck(ref);
   }
@@ -726,8 +753,8 @@ function capabilityEvidenceCopy(ref) {
   const progress = progressFor(ref.line.id);
   if (!isUserLine(ref)) return progress.stage >= STAGE.HEARD ? "不是背台词：你已经抓住对方意图" : "先听声音，再选对方主要意思";
   if (progress.stage >= STAGE.VARIED) return "已完成跟读、脱稿和替换真实信息";
-  if (progress.stage >= STAGE.RECALLED) return "本次可以继续；再变化一次才算稳定使用";
-  if (progress.stage >= STAGE.IMITATED) return "下一步隐藏英文，证明不是照着读";
+  if (progress.stage >= STAGE.RECALLED) return "已经在隔天复习里脱稿说出；变化表达交给 AI 场景";
+  if (progress.stage >= STAGE.IMITATED) return "第一次开口完成；明天再隐藏英文，避免同一刻假装记住";
   return "完整英文会在听完示范后出现";
 }
 
@@ -776,15 +803,8 @@ function answerListening(ref, button) {
   listeningUnlockedForCurrent = true;
   saveState(false);
   renderPhrase();
-  toast("听懂的是对方意图，不要求你背对方台词。");
-}
-
-function renderSpeechNextActions(ref) {
-  const progress = progressFor(ref.line.id);
-  const variation = PHRASE_VARIATIONS[ref.line.id];
-  $("speechNextActions").hidden = progress.stage < STAGE.IMITATED;
-  $("startRecallBtn").hidden = progress.stage < STAGE.IMITATED || progress.stage >= STAGE.RECALLED;
-  $("startVariationBtn").hidden = !variation || progress.stage < STAGE.RECALLED || progress.stage >= STAGE.VARIED;
+  queueAutoAdvance(ref, "听懂了 · 正在进入下一句", 900);
+  toast("听懂的是对方意图。对方台词不用背，下一句会自动出现。");
 }
 
 function renderSpelling(ref) {
@@ -933,6 +953,7 @@ function waitMs(ms) {
 async function speakCurrent(rate) {
   const scene = sceneById(currentSceneId);
   const ref = { scene, line: scene.lines[currentPhraseIndex], index: currentPhraseIndex };
+  const taskDone = taskCompleted(ref);
   const controls = [$("lessonStartAudio"), $("slowSoundBtn"), $("normalSoundBtn")];
   controls.forEach(button => { button.disabled = true; button.classList.add("is-playing"); });
   $("audioStatus").textContent = "🔊 正在播放…如果没听到，请先按手机侧边音量＋";
@@ -941,17 +962,34 @@ async function speakCurrent(rate) {
     markActive();
     saveState(false);
     audioPlayedForCurrent = true;
+    $("listenTools").hidden = false;
+    $("lessonStartAudio").classList.add("completed");
+    $("lessonAudioStep").textContent = taskDone ? "DONE TODAY" : "LISTENED / OPTIONAL";
+    $("lessonAudioTitle").textContent = taskDone ? "本句已完成 · 想听还能再听" : "再听一次示范";
+    $("lessonAudioHint").textContent = taskDone ? "脱稿和变化表达会在之后自然回来" : "不必重复，继续做屏幕上唯一的新动作";
     if (isUserLine(ref)) {
       $("phraseEnglish").textContent = displayText(ref.line.en);
       $("phraseEnglish").classList.remove("concealed-text");
-      $("capabilityEvidence").textContent = progressFor(ref.line.id).stage >= STAGE.IMITATED ? capabilityEvidenceCopy(ref) : "现在跟着示范说一次；通过后还要隐藏英文再说";
+      if (!taskDone) {
+        $("lessonSteps").innerHTML = "<span><b>1</b>这次只做：说一句</span>";
+        $("capabilityEvidence").textContent = "现在跟着示范说一次；脱稿不是今天这一刻硬测";
+        $("recordPanel").hidden = false;
+      }
     } else {
-      renderListeningCheck(ref);
+      if (!taskDone) {
+        $("lessonSteps").innerHTML = "<span><b>1</b>这次只做：选意思</span>";
+        $("listeningCheck").hidden = false;
+        renderListeningCheck(ref);
+      }
     }
   }
   controls.forEach(button => { button.disabled = false; button.classList.remove("is-playing"); });
   $("audioStatus").textContent = played ? "播放完成。没听到？按手机侧边音量＋后再点一次。" : "播放失败。请确认媒体音量已打开，再重试。";
   if (!played) toast("音频播放失败，请截图这一页发给我。");
+  if (played && !taskDone) {
+    const target = isUserLine(ref) ? $("recordPanel") : $("listeningCheck");
+    setTimeout(() => target.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }), 140);
+  }
 }
 
 async function playSpellingAudio(ref) {
@@ -1039,6 +1077,7 @@ function finishRecording() {
 }
 
 function cleanupRecording() {
+  clearAutoAdvance();
   speechCheckSerial++;
   if (browserSpeechCheck) {
     try { browserSpeechCheck.abort(); } catch {}
@@ -1076,8 +1115,6 @@ function cleanupRecording() {
     $("speechWordDiff").replaceChildren();
     $("speechOutcome").textContent = "";
     $("speechNextStep").textContent = "";
-    $("speechNextActions").hidden = true;
-    $("variationCue").hidden = true;
     $("openMicSettings").hidden = true;
     $("knownBtn")?.classList.remove("speech-ready");
   }
@@ -1112,16 +1149,14 @@ async function compareRecording() {
 function gradeRecording(value) {
   const ref = currentSpeechRef();
   if (value === "close" && recordingUrl && isUserLine(ref)) {
-    const stage = practiceMode === "variation" ? STAGE.VARIED : practiceMode === "recall" ? STAGE.RECALLED : STAGE.IMITATED;
-    recordCapability(ref, stage, { outcome: "understood" });
-    if (stage === STAGE.RECALLED) state.metrics.recallPasses++;
-    if (stage === STAGE.VARIED) state.metrics.variationPasses++;
+    recordCapability(ref, STAGE.IMITATED, { outcome: "understood" });
     saveState(false);
     $("capabilityStatus").textContent = capabilityStageLabel(ref);
     $("capabilityEvidence").textContent = `${capabilityEvidenceCopy(ref)} · 本次来自你的诚实自评`;
+    $("knownBtn").hidden = !taskCompleted(ref);
     $("knownBtn").disabled = !taskCompleted(ref);
-    $("knownBtn").textContent = taskCompleted(ref) ? "诚实自评通过 · 下一句 →" : "脱稿说出后继续 →";
-    renderSpeechNextActions(ref);
+    $("knownBtn").textContent = "诚实自评通过 · 下一句 →";
+    if (taskCompleted(ref)) queueAutoAdvance(ref, "第一次开口完成 · 正在进入下一句", 1150);
   } else if (value === "again" && state.known.includes(ref.line.id)) {
     const review = state.reviews[ref.line.id] || { level: 0, due: addDays(localDateKey(), 1) };
     review.due = addDays(localDateKey(), 1);
@@ -1129,7 +1164,7 @@ function gradeRecording(value) {
     state.reviews[ref.line.id] = review;
     saveState(false);
   }
-  toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "已按你的诚实自评记录；没有冒充专业发音分。");
+  toast(value === "again" ? "已安排明天再练，不需要现在硬撑。" : "第一次开口已记录；脱稿会在明天复习里回来。");
 }
 
 function nativeSpeechCheckPlugin() {
@@ -1153,7 +1188,6 @@ function currentSpeechRef() {
 }
 
 function currentSpeechTarget(ref) {
-  if (practiceMode === "variation" && PHRASE_VARIATIONS[ref.line.id]) return displayText(PHRASE_VARIATIONS[ref.line.id].en);
   return displayText(ref.line.en);
 }
 
@@ -1176,18 +1210,12 @@ function renderSpeechEvaluation(evaluation, confidence = -1) {
   if (lowConfidence) {
     $("speechOutcome").textContent = "这次判断不确定";
     $("speechNextStep").textContent = "系统识别置信度太低，不把它算成通过。离手机近一点，再说一次。";
-  } else if (passed && practiceMode === "variation") {
-    $("speechOutcome").textContent = "变化表达完成 ✓";
-    $("speechNextStep").textContent = "你不是背答案，而是已经会替换真实信息。";
-  } else if (passed && practiceMode === "recall") {
-    $("speechOutcome").textContent = "不看英文也说出来了 ✓";
-    $("speechNextStep").textContent = PHRASE_VARIATIONS[ref.line.id] ? "本次已经能继续；再换一个真实信息，就升级为稳定使用。" : "这句已经有主动回忆证据，可以继续。";
   } else if (evaluation.outcome === "pass") {
-    $("speechOutcome").textContent = "手机听清了这次跟读 ✓";
-    $("speechNextStep").textContent = "这还不是掌握。下一步隐藏英文，再说一次。";
+    $("speechOutcome").textContent = "第一次开口完成 ✓";
+    $("speechNextStep").textContent = "今天到这里刚好。明天它会隐藏英文回来，检验你是否真的记住。";
   } else if (evaluation.outcome === "understood") {
-    $("speechOutcome").textContent = "核心意思听清了 ✓";
-    $("speechNextStep").textContent = "不追求播音腔。现在隐藏英文，再证明自己不是照着读。";
+    $("speechOutcome").textContent = "核心意思听清了，够用了 ✓";
+    $("speechNextStep").textContent = "不追求播音腔，也不立刻加考。明天再脱稿，更接近真实记住。";
   } else if (evaluation.outcome === "almost") {
     $("speechOutcome").textContent = evaluation.focusWord ? `差一个关键点：${evaluation.focusWord}` : "已经接近了，再慢一点";
     $("speechNextStep").textContent = evaluation.focusWord ? `点上面的“听慢速”，只盯住粉色的 ${evaluation.focusWord}，然后再说一次。` : "点上面的“听慢速”，再说一次。";
@@ -1201,15 +1229,7 @@ function renderSpeechEvaluation(evaluation, confidence = -1) {
   const progress = progressFor(ref.line.id);
   if (passed) {
     state.metrics.speechPasses++;
-    if (practiceMode === "variation") {
-      state.metrics.variationPasses++;
-      recordCapability(ref, STAGE.VARIED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
-    } else if (practiceMode === "recall") {
-      state.metrics.recallPasses++;
-      recordCapability(ref, STAGE.RECALLED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
-    } else {
-      recordCapability(ref, STAGE.IMITATED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
-    }
+    recordCapability(ref, STAGE.IMITATED, { outcome, weakWord: "", firstTryPassed: progress.attempts === 0 });
   } else {
     progress.attempts = Math.min(999, progress.attempts + 1);
     progress.lastOutcome = outcome;
@@ -1220,11 +1240,12 @@ function renderSpeechEvaluation(evaluation, confidence = -1) {
   saveState(false);
   $("capabilityStatus").textContent = capabilityStageLabel(ref);
   $("capabilityEvidence").textContent = capabilityEvidenceCopy(ref);
+  $("knownBtn").hidden = !taskCompleted(ref);
   $("knownBtn").disabled = !taskCompleted(ref);
-  $("knownBtn").textContent = taskCompleted(ref) ? (taskMastered(ref) ? "已经能真实使用 · 下一句 →" : "本次通过 · 下一句 →") : "脱稿说出后继续 →";
-  renderSpeechNextActions(ref);
+  $("knownBtn").textContent = "第一次开口完成 · 下一句 →";
   renderSpelling(ref);
   updateAll();
+  if (passed && taskCompleted(ref)) queueAutoAdvance(ref, "第一次开口完成 · 正在进入下一句", 1150);
 }
 
 function browserSpeechResult(serial) {
@@ -1260,7 +1281,7 @@ async function startSpeechRecognition() {
   const ref = currentSpeechRef();
   const { scene, line } = ref;
   if (!isUserLine(ref)) return;
-  if (practiceMode === "imitate" && !audioPlayedForCurrent) {
+  if (!audioPlayedForCurrent) {
     $("recognitionResult").textContent = "先点上面的粉色播放按钮听一遍，再开始跟说。";
     $("lessonStartAudio").scrollIntoView({ block: "center", behavior: "smooth" });
     return;
@@ -1277,7 +1298,7 @@ async function startSpeechRecognition() {
     await stopAllPlayback();
     await waitMs(420);
     button.textContent = "正在听…说完停一下";
-    $("recognitionResult").textContent = practiceMode === "imitate" ? "现在跟着刚才的示范说。正常说完即可，不需要喊。" : "现在不看英文说出来；说完停一下。";
+    $("recognitionResult").textContent = "现在跟着刚才的示范说。正常说完即可，不需要喊。";
     const plugin = nativeSpeechCheckPlugin();
     const result = plugin ? await plugin.check({ language: "en-US", maxResults: 1 }) : await browserSpeechResult(serial);
     if (serial !== speechCheckSerial || currentSceneId !== scene.id || scene.lines[currentPhraseIndex]?.id !== line.id) return;
@@ -1293,39 +1314,9 @@ async function startSpeechRecognition() {
     if (serial === speechCheckSerial) {
       button.disabled = false;
       button.classList.remove("listening");
-      button.textContent = practiceMode === "variation" ? "🎙 说出变化后的句子" : practiceMode === "recall" ? "🎙 不看英文 · 再说一次" : "🎙 再说一次 · 重新判断";
+      button.textContent = "🎙 再说一次 · 重新判断";
     }
   }
-}
-
-function startRecallMode() {
-  const ref = currentSpeechRef();
-  practiceMode = "recall";
-  $("phraseEnglish").textContent = "英文已经隐藏 · 先自己想起来";
-  $("phraseEnglish").classList.add("concealed-text");
-  $("variationCue").hidden = true;
-  $("speechFeedback").hidden = true;
-  $("speechNextActions").hidden = true;
-  $("recognitionResult").textContent = `只看中文“${displayText(ref.line.zh)}”，不看英文说一次。`;
-  $("recognizeBtn").textContent = "🎙 不看英文 · 现在说";
-  $("recognizeBtn").scrollIntoView({ block: "center", behavior: "smooth" });
-}
-
-function startVariationMode() {
-  const ref = currentSpeechRef();
-  const variation = PHRASE_VARIATIONS[ref.line.id];
-  if (!variation) return;
-  practiceMode = "variation";
-  $("phraseEnglish").textContent = "换一个真实信息 · 英文不显示";
-  $("phraseEnglish").classList.add("concealed-text");
-  $("variationChinese").textContent = displayText(variation.zh);
-  $("variationHint").textContent = variation.hint;
-  $("variationCue").hidden = false;
-  $("speechFeedback").hidden = true;
-  $("speechNextActions").hidden = true;
-  $("recognitionResult").textContent = "根据粉色提示换一个信息，不要重复背原句。";
-  $("recognizeBtn").textContent = "🎙 说出变化后的句子";
-  $("recognizeBtn").scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 function advanceCurrentPhrase() {
@@ -1333,7 +1324,7 @@ function advanceCurrentPhrase() {
   const line = scene.lines[currentPhraseIndex];
   const ref = { scene, line, index: currentPhraseIndex };
   if (!taskCompleted(ref)) {
-    toast(isUserLine(ref) ? "先完成一次不看英文的开口；也可以明确选择跳过。" : "先听声音并选对主要意思；也可以明确选择跳过。");
+    toast(isUserLine(ref) ? "先听示范并跟着说一次；也可以明确选择跳过。" : "先听声音并选对主要意思；也可以明确选择跳过。");
     const target = isUserLine(ref) ? $("recordPanel") : $("listeningCheck");
     target.scrollIntoView({ block: "center", behavior: "smooth" });
     return;
@@ -2090,9 +2081,8 @@ function gradeAiMemory(grade) {
 
 function quizPool() {
   const due = shuffled(dueRefs());
-  const known = shuffled(state.known.map(phraseRefById).filter(Boolean));
   const unique = [];
-  [...due, ...known].forEach(ref => { if (!unique.some(item => item.line.id === ref.line.id)) unique.push(ref); });
+  due.forEach(ref => { if (!unique.some(item => item.line.id === ref.line.id)) unique.push(ref); });
   if (!unique.length) return [];
   return unique.slice(0, 5);
 }
@@ -2100,7 +2090,7 @@ function quizPool() {
 function startQuiz() {
   quizItems = quizPool();
   if (!quizItems.length) {
-    toast("先拿下一句，再回来复习。");
+    toast("今天没有到期复习。新句先听和开口一次，明天再脱稿。");
     const next = nextPhraseRef();
     openScene(next.scene.id, next.index);
     return;
@@ -2478,7 +2468,7 @@ async function copyDiagnostics() {
 function showVersionNotice() {
   if (state.lastSeenVersion === APP_VERSION) return;
   $("updateBanner").dataset.mode = "version";
-  $("updateBanner").querySelector("span").textContent = `V${APP_VERSION}：进度只认真实开口证据`;
+  $("updateBanner").querySelector("span").textContent = `V${APP_VERSION}：每次只做一步，脱稿隔天再测`;
   $("reloadUpdate").textContent = "知道了";
   $("updateBanner").hidden = false;
 }
@@ -2542,8 +2532,6 @@ function bindEvents() {
   $("compareBtn").addEventListener("click", compareRecording);
   document.querySelectorAll("[data-record-grade]").forEach(button => button.addEventListener("click", () => gradeRecording(button.dataset.recordGrade)));
   $("recognizeBtn").addEventListener("click", startSpeechRecognition);
-  $("startRecallBtn").addEventListener("click", startRecallMode);
-  $("startVariationBtn").addEventListener("click", startVariationMode);
   $("openMicSettings").addEventListener("click", openMicrophoneSettings);
   $("startRoleplay").addEventListener("click", openRoleplay);
   $("closeRoleplay").addEventListener("click", () => cleanupRoleplay(true));
