@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "style_id": "shiyi-original24-v1",
+  "display_name": "十一表情包·原版24款固定画风",
+  "status": "approved_examples_bundled_reproduction_under_test",
+  "references": [
+    {
+      "file": "original24-greeting.png",
+      "role": "primary_style",
+      "use": "Original approved 24-sticker drawing style: proportions, fine contours, face and hair rendering; not identity or accessories",
+      "sha256": "da5f89342489012595b1e78e5d3b351112456c2bd4a7ebaf1a276696441a868a",
+      "bytes": 1456765
+    },
+    {
+      "file": "approved-detail.png",
+      "role": "detail_style",
+      "use": "User-reaffirmed example of the same style: natural feature scale, fine hair detail, subtle facial texture and intricate illustrated fabric; not identity or outfit",
+      "sha256": "711268af11a441540d4f1c12d292d7807886b0142eb47fb01cc1b87978b6c86c",
+      "bytes": 2198665
+    },
+    {
+      "file": "original24-overview.jpg",
+      "role": "review_only",
+      "use": "Original approved series for visual review and action variety; not a generated output target",
+      "sha256": "a2a472bcda106e5aec3044708ce11b3ee488b9d2267dc2db145c872ceddcbdd4",
+      "bytes": 424170
+    }
+  ],
+  "default_generation_roles": [
+    "primary_style",
+    "detail_style"
+  ],
+  "customer_supplies_style_reference": false,
+  "customer_photo_role": "Identity, clothing and accessory evidence only",
+  "authorization_scope": "Product owner expressly requested these approved generated samples be included as Skill style references; no unrelated raw photos or personal materials are bundled",
+  "sample_use": "Reference drawing style while creating the customer’s own character; no permission for impersonation, unrelated endorsement or reference-character resale is granted here",
+  "guarantee": "Not a deterministic model/seed lock or a cross-host stability claim"
+}

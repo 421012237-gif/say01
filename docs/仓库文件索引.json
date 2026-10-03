@@ -1,0 +1,1596 @@
+{
+  "date": "2026-10-03",
+  "basis_commit": "5c15037a3efad229e7fc2edd0fbdfa5d6187240f",
+  "scope": "全部原跟踪文件与本次新增文件；不含忽略文件、依赖和私人客户项目",
+  "files_total": 225,
+  "counts": {
+    ".github": 1,
+    "android": 82,
+    "assets": 1,
+    "audio": 60,
+    "docs": 3,
+    "downloads": 2,
+    "scripts": 9,
+    "server": 5,
+    "skills": 36,
+    "根目录": 26
+  },
+  "self_reference_policy": "两个生成索引自身的 bytes 与 sha256 留空，避免递归摘要",
+  "files": [
+    {
+      "path": ".github/workflows/android-apk.yml",
+      "category": ".github",
+      "purpose": "手动构建私人自测 APK 的现有工作流",
+      "bytes": 4167,
+      "sha256": "98ac5837cf9eb53847f9c868bcfb4b635c2716cfab1576d462db81c9e8d651be"
+    },
+    {
+      "path": ".gitignore",
+      "category": "根目录",
+      "purpose": "忽略依赖、Web 同步产物与系统文件",
+      "bytes": 33,
+      "sha256": "d371106760d022b1a6421342606ef20a35440a39724306c69e6a4a3c682ee7c2"
+    },
+    {
+      "path": ".nojekyll",
+      "category": "根目录",
+      "purpose": "GitHub Pages 静态资源标记",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "10人试用记录表.md",
+      "category": "根目录",
+      "purpose": "真实用户试用记录模板",
+      "bytes": 2866,
+      "sha256": "1ea72c312cd96f415e561d249a1902c532e59514667a721db7b8559fdb2b0685"
+    },
+    {
+      "path": "AI陪练使用说明.md",
+      "category": "根目录",
+      "purpose": "AI 陪练配置与范围，含历史版本说明",
+      "bytes": 3960,
+      "sha256": "5c0cc4fdfc55fbeb0b8d8fba3f3f3eff8c7cc6075942917b677931e9db026e26"
+    },
+    {
+      "path": "README.md",
+      "category": "根目录",
+      "purpose": "仓库导航与十一说 V2.7.0 说明",
+      "bytes": 3122,
+      "sha256": "d1d312c9583b2442a617c89b7ece38b09a7dd74da62181dc98a034732d25b896"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "category": "根目录",
+      "purpose": "第三方语音组件、模型来源及许可",
+      "bytes": 643,
+      "sha256": "c5813cb4b5cef84b8a221a6913a6a48b5532e4470b47ec37996eed241e996d05"
+    },
+    {
+      "path": "V2.6.0-修复说明.md",
+      "category": "根目录",
+      "purpose": "V2.6.0 历史修复记录",
+      "bytes": 1699,
+      "sha256": "a079cae23749f283f9395ab27528a805115939e326735359949f448d4f67ded3"
+    },
+    {
+      "path": "ai-coach.js",
+      "category": "根目录",
+      "purpose": "AI 场景、回复解析及记忆回声",
+      "bytes": 6376,
+      "sha256": "3e76ea2bd5f36d212f4358ba9ecd21f5af493403db757be0c7d76fec938b0f81"
+    },
+    {
+      "path": "android/.gitignore",
+      "category": "android",
+      "purpose": "安卓构建产物忽略规则",
+      "bytes": 1947,
+      "sha256": "defd122d945658aa9f85eecbcf717612f5e54c4426909334576082303afc74be"
+    },
+    {
+      "path": "android/app/.gitignore",
+      "category": "android",
+      "purpose": "安卓构建产物忽略规则",
+      "bytes": 26,
+      "sha256": "99c54e51ee601a60fbde8016b2cbf717483bc2e92773be86c9247d02a7fa6ea4"
+    },
+    {
+      "path": "android/app/build.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：build.gradle",
+      "bytes": 3213,
+      "sha256": "92cbbaaa31e211d79336220b91bb82991effceaa2a5d148a78979053edcda3a9"
+    },
+    {
+      "path": "android/app/capacitor.build.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：capacitor.build.gradle",
+      "bytes": 370,
+      "sha256": "7051cadfdbc532197d2cfd4f8a11684d81367f23cf7952e5a208f7b6aa0833e0"
+    },
+    {
+      "path": "android/app/proguard-rules.pro",
+      "category": "android",
+      "purpose": "安卓混淆规则",
+      "bytes": 751,
+      "sha256": "1cf8c57e8f79c250b0af9c1a5a4edad71a5c348a79ab70243b6bae086c150ad2"
+    },
+    {
+      "path": "android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "category": "android",
+      "purpose": "Capacitor 工程自带测试样例",
+      "bytes": 774,
+      "sha256": "ff50b4c110a7434312f9af54171f9e8523b015836f707c9b387b76d4c38a97f8"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "category": "android",
+      "purpose": "安卓入口与权限声明",
+      "bytes": 1915,
+      "sha256": "b47cdddebff5f40881f683700a64dafbe03fd5d76abfbdcdf23fd96634adc646"
+    },
+    {
+      "path": "android/app/src/main/java/com/say01/english/MainActivity.java",
+      "category": "android",
+      "purpose": "安卓入口及插件注册",
+      "bytes": 464,
+      "sha256": "33701ff021bf7282eaa1d7a3066ccff4b164c0a832d4deef37d2b70855db34c2"
+    },
+    {
+      "path": "android/app/src/main/java/com/say01/english/SayAiConfigPlugin.java",
+      "category": "android",
+      "purpose": "私人 APK AI 连接配置桥接",
+      "bytes": 869,
+      "sha256": "2f611f7f61b437b422d52f956eb2c85537e5cd20497a8aaf4b54d87d50776a36"
+    },
+    {
+      "path": "android/app/src/main/java/com/say01/english/SayAudioPlugin.java",
+      "category": "android",
+      "purpose": "本地示范音频与录音控制",
+      "bytes": 3559,
+      "sha256": "cfd4209d34970a100a669ff39c93e8b37f8cf3acd0b1bac440c126090df2e869"
+    },
+    {
+      "path": "android/app/src/main/java/com/say01/english/SayLocalVoicePlugin.java",
+      "category": "android",
+      "purpose": "Kokoro 本地动态语音",
+      "bytes": 11952,
+      "sha256": "8233a9f54fdad568682715d37eda208841934bebd18c8ce2ae95cdbf4ce72830"
+    },
+    {
+      "path": "android/app/src/main/java/com/say01/english/SaySpeechCheckPlugin.java",
+      "category": "android",
+      "purpose": "原生英语识别与跟读处理",
+      "bytes": 8458,
+      "sha256": "e958e5c30fd380db26b2d03eb73212587bfd02645d466b1fd4242c8c27493e84"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-hdpi",
+      "bytes": 13292,
+      "sha256": "7b20f110e8142be45b72d0618ca2397facf72102a653a46fc6cca577791487d7"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-ldpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-ldpi",
+      "bytes": 3722,
+      "sha256": "71a706dbdc455a1892af4cd4b065085b9f57340a815ff58364a527e511e0ae60"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-mdpi",
+      "bytes": 6521,
+      "sha256": "761928bb99051a575ef6ad9d72968863bfcd31b908fc2d61a8bc25f014f9811d"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-hdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-hdpi",
+      "bytes": 13292,
+      "sha256": "7b20f110e8142be45b72d0618ca2397facf72102a653a46fc6cca577791487d7"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-ldpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-ldpi",
+      "bytes": 3722,
+      "sha256": "71a706dbdc455a1892af4cd4b065085b9f57340a815ff58364a527e511e0ae60"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-mdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-mdpi",
+      "bytes": 6521,
+      "sha256": "761928bb99051a575ef6ad9d72968863bfcd31b908fc2d61a8bc25f014f9811d"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-xhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-xhdpi",
+      "bytes": 26562,
+      "sha256": "514dffecf219b6e1db3e1cd16f1a07857c5ca5989f091ebc76e99de087f393b0"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-xxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-xxhdpi",
+      "bytes": 41013,
+      "sha256": "40f4074e0e7de530ded872e87d4766905221495509c571261cf742337c0c05a1"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-night-xxxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-night-xxxhdpi",
+      "bytes": 61114,
+      "sha256": "1924e20e333868751e8d5e855810e465e514e485f92459eef363987eb6a562b2"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-xhdpi",
+      "bytes": 26562,
+      "sha256": "514dffecf219b6e1db3e1cd16f1a07857c5ca5989f091ebc76e99de087f393b0"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-xxhdpi",
+      "bytes": 41013,
+      "sha256": "40f4074e0e7de530ded872e87d4766905221495509c571261cf742337c0c05a1"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-land-xxxhdpi",
+      "bytes": 61114,
+      "sha256": "1924e20e333868751e8d5e855810e465e514e485f92459eef363987eb6a562b2"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-night/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-night",
+      "bytes": 3722,
+      "sha256": "71a706dbdc455a1892af4cd4b065085b9f57340a815ff58364a527e511e0ae60"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-hdpi",
+      "bytes": 12556,
+      "sha256": "559bb7072e1bde6dde37c8755ddfdf0f6962f7d4ad41659d9424e45f3d15a5bd"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-ldpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-ldpi",
+      "bytes": 3478,
+      "sha256": "8ca0d7f4a5e888bd0c6e89dcc0d03e012beac64e73122174e62c3d7e8b4de41a"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-mdpi",
+      "bytes": 5698,
+      "sha256": "9507e2f58c4015028ab10bec47c349ef817c74c0bdecb03c36a96661e992a5ce"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-hdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-hdpi",
+      "bytes": 12556,
+      "sha256": "559bb7072e1bde6dde37c8755ddfdf0f6962f7d4ad41659d9424e45f3d15a5bd"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-ldpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-ldpi",
+      "bytes": 3478,
+      "sha256": "8ca0d7f4a5e888bd0c6e89dcc0d03e012beac64e73122174e62c3d7e8b4de41a"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-mdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-mdpi",
+      "bytes": 5698,
+      "sha256": "9507e2f58c4015028ab10bec47c349ef817c74c0bdecb03c36a96661e992a5ce"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-xhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-xhdpi",
+      "bytes": 26302,
+      "sha256": "652114d83073273d220e3fd1bcfc9d56944bd0b7486f5eb322bfc57e8bbbe7a5"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-xxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-xxhdpi",
+      "bytes": 38862,
+      "sha256": "747c3274516b2e4492cc511fd4245e844560861d3b10d3b3b6e1c6288e05921e"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-night-xxxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-night-xxxhdpi",
+      "bytes": 59132,
+      "sha256": "360724674b0b661f83ddf5db183eb349d459a2c361d783ceec3bfb73f398a262"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-xhdpi",
+      "bytes": 26302,
+      "sha256": "652114d83073273d220e3fd1bcfc9d56944bd0b7486f5eb322bfc57e8bbbe7a5"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-xxhdpi",
+      "bytes": 38862,
+      "sha256": "747c3274516b2e4492cc511fd4245e844560861d3b10d3b3b6e1c6288e05921e"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable-port-xxxhdpi",
+      "bytes": 59132,
+      "sha256": "360724674b0b661f83ddf5db183eb349d459a2c361d783ceec3bfb73f398a262"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：drawable-v24",
+      "bytes": 1880,
+      "sha256": "a8514094f754b099d3e55ce1d6e0b2de79db418b2eeacb0fc2a6bb0bfadef221"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：drawable",
+      "bytes": 5606,
+      "sha256": "718ba51adf166bb55c3e9936bb8199a0148457f7f0191aaa2f37a94f3159d6ec"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/splash.png",
+      "category": "android",
+      "purpose": "安卓启动图：drawable",
+      "bytes": 5698,
+      "sha256": "9507e2f58c4015028ab10bec47c349ef817c74c0bdecb03c36a96661e992a5ce"
+    },
+    {
+      "path": "android/app/src/main/res/layout/activity_main.xml",
+      "category": "android",
+      "purpose": "安卓界面/主题/文件共享资源：activity_main.xml",
+      "bytes": 535,
+      "sha256": "5d770feb791313b947020cbfc57e5c733c556dac5e9e49261a1190e527073253"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-anydpi-v26",
+      "bytes": 380,
+      "sha256": "70f2c6a1478441deb70762f95abf87a8ab8b2b38d53715edc1f7b73df8e5f8df"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-anydpi-v26",
+      "bytes": 380,
+      "sha256": "70f2c6a1478441deb70762f95abf87a8ab8b2b38d53715edc1f7b73df8e5f8df"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-hdpi",
+      "bytes": 2705,
+      "sha256": "16489247b63efd7f74dec4a94ba8640f17942b4f00233527ce5538540906586b"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-hdpi",
+      "bytes": 912,
+      "sha256": "d5f9840e659f433833f812b57b28c57ec2fd7fc467171899762487c35e8967e2"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-hdpi",
+      "bytes": 4088,
+      "sha256": "d2d501149df7029fb71377d4d760fb1f1b9fe7cc0ce60c9015611c5b9dd26ef9"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-hdpi",
+      "bytes": 2403,
+      "sha256": "b6aa764d2e5738184bac32e2fd97dc2042204bbc51a841816d09ca810378aad8"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-ldpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-ldpi",
+      "bytes": 913,
+      "sha256": "e4ef57fcfbe926cba2adeedaec539dd356f93870d2a084300587e86d4cc76763"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-ldpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-ldpi",
+      "bytes": 332,
+      "sha256": "17f46b11e9fd54278d6748296a5842a1de8259970d9a71075fe33d96e94ede35"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-ldpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-ldpi",
+      "bytes": 1920,
+      "sha256": "48098fced35d704ade35ba4a3b75792f4be453d05a359ca37e0ffe9358d1f9c5"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-ldpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-ldpi",
+      "bytes": 1226,
+      "sha256": "8efce9bcfb3c1c88ad822f645ecc092c1561d4c2a28b8d119be62a5fa05df6fc"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-mdpi",
+      "bytes": 1504,
+      "sha256": "dc284ab5991cfe702c1883c4901adcec8cb57fd2bf0b0e80eae5a80abf9c3c05"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-mdpi",
+      "bytes": 563,
+      "sha256": "a943d12d59334f0dc5974ac54b2e08453563c2aa7eb36e746df72bb11a3277ad"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-mdpi",
+      "bytes": 2557,
+      "sha256": "481afe399f78f27e9753edc6a46a341340e40962e4f0f764ee13588c34e0b30f"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-mdpi",
+      "bytes": 1614,
+      "sha256": "f74ba6016dec1d5d6f08d77ba5169dd2f791987b91789935a2a563f01534bfe1"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xhdpi",
+      "bytes": 3811,
+      "sha256": "e69ad4d2d66a9ec27329779e0029df17ed31ce3e54302ddc0684688eeb374097"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xhdpi",
+      "bytes": 1517,
+      "sha256": "c7bc17ce2bacfc612fcd1a58ec907c2c0123e9e7100f4af45ffc8bee8a48aaf6"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xhdpi",
+      "bytes": 5812,
+      "sha256": "3ffb452dd31a9e7eab900b10cecdb4a5e6a7530e6cfc4ce1f8cf49cd41204031"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xhdpi",
+      "bytes": 3210,
+      "sha256": "027021834347f948edb7c254b34da5e481c25b60b9a95e2cb0afa004bebd92cc"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxhdpi",
+      "bytes": 6176,
+      "sha256": "629406f69e8dab9f8fc25382474eede12bb15e27c03331a3b73c723f0eae6067"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxhdpi",
+      "bytes": 2931,
+      "sha256": "a2e5f5a148c1677776e724b88a24393315708203d6a13c8d968ddcebb02e207a"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxhdpi",
+      "bytes": 9876,
+      "sha256": "624ed61abadfd1b364c9f3bb1d44191788fda641c09ca470466038533b564d67"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxhdpi",
+      "bytes": 4922,
+      "sha256": "f96a3c2c121e386a7237391ef2fc6d47f12b0f83ee8abae68a5893c522a2e8eb"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxxhdpi",
+      "bytes": 8809,
+      "sha256": "03311e5a5883df3178379ebbd8b000543b6e9d69db0ce10610c1d55d375c0795"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxxhdpi",
+      "bytes": 4736,
+      "sha256": "b908b9f7b4d26b6f5cf3c2481cb054f6abf5c691873c2196680f8382c0ed03be"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxxhdpi",
+      "bytes": 14256,
+      "sha256": "278a0ce142a7db652553df41ccf6e78e6229ba2c0662ed7d69a5f954d6ba8086"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：mipmap-xxxhdpi",
+      "bytes": 6914,
+      "sha256": "691bced53c8d62a6e9250f6719d09e79e9e5911553057af1acb5f748fc337ca1"
+    },
+    {
+      "path": "android/app/src/main/res/values/colors.xml",
+      "category": "android",
+      "purpose": "安卓界面/主题/文件共享资源：colors.xml",
+      "bytes": 208,
+      "sha256": "879b2de6685220ec49e077a8e6f8e7041b8bdca9e5c184291790f551918b6b63"
+    },
+    {
+      "path": "android/app/src/main/res/values/ic_launcher_background.xml",
+      "category": "android",
+      "purpose": "安卓启动器图标资源：values",
+      "bytes": 121,
+      "sha256": "6cd0e47530c63219967234cbd90d29920bf9938cc8200b0e48329d9bc49e485a"
+    },
+    {
+      "path": "android/app/src/main/res/values/strings.xml",
+      "category": "android",
+      "purpose": "安卓界面/主题/文件共享资源：strings.xml",
+      "bytes": 292,
+      "sha256": "37e4ae329ba6de1f9ceaa187528c93c6a67f2b06d283eb89acc488b4c6101556"
+    },
+    {
+      "path": "android/app/src/main/res/values/styles.xml",
+      "category": "android",
+      "purpose": "安卓界面/主题/文件共享资源：styles.xml",
+      "bytes": 1346,
+      "sha256": "44addc170cf74345cef869d3840c6441c712a9c8ec197214aa55bf49408c901e"
+    },
+    {
+      "path": "android/app/src/main/res/xml/file_paths.xml",
+      "category": "android",
+      "purpose": "安卓界面/主题/文件共享资源：file_paths.xml",
+      "bytes": 213,
+      "sha256": "a46ed43ef65c90cb6778f4581decf3556e3f0055aad8f36d69dae16f9a0e99aa"
+    },
+    {
+      "path": "android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "category": "android",
+      "purpose": "Capacitor 工程自带测试样例",
+      "bytes": 402,
+      "sha256": "d4045ae8fac1f0807e6b24eb34e68409a9a235df9d1a3f896fb8c9a49424363d"
+    },
+    {
+      "path": "android/build.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：build.gradle",
+      "bytes": 633,
+      "sha256": "e2aa5075e1fcfd5e77c63eb8d662932b3c8586c927376b88a4986365af3b635f"
+    },
+    {
+      "path": "android/capacitor.settings.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：capacitor.settings.gradle",
+      "bytes": 207,
+      "sha256": "b488e162f552d6efb8286793c7871bbc1061c9bf5ca3a6a495fdeb8988a541c7"
+    },
+    {
+      "path": "android/gradle.properties",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：gradle.properties",
+      "bytes": 987,
+      "sha256": "3bab15c5b8bc4c2f4b6cf525497d15ad4abca53a460e6dd2eb0f0135817d31e6"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "category": "android",
+      "purpose": "Gradle 包装器二进制",
+      "bytes": 43764,
+      "sha256": "7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：gradle-wrapper.properties",
+      "bytes": 253,
+      "sha256": "9a479a85aa879bb55284fc16d0de5b81a745c3854f4e2d88c42e7debaf007435"
+    },
+    {
+      "path": "android/gradlew",
+      "category": "android",
+      "purpose": "Gradle 构建入口（Unix）",
+      "bytes": 8733,
+      "sha256": "b187b4c52e749f5760afdd6fadc31b2a98ad35fb249bf0dff03b72650f320409"
+    },
+    {
+      "path": "android/gradlew.bat",
+      "category": "android",
+      "purpose": "Gradle 构建入口（Windows）",
+      "bytes": 2843,
+      "sha256": "94102713eb8fb22d032397924c0f38ab2da783ba60d07054339f1190a0c4e2cd"
+    },
+    {
+      "path": "android/settings.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：settings.gradle",
+      "bytes": 208,
+      "sha256": "6ce098d15ebd69b44c4ecd786bca1bdc366340d2459b2af4d7bb0ab317aa9669"
+    },
+    {
+      "path": "android/variables.gradle",
+      "category": "android",
+      "purpose": "安卓 Gradle 构建配置：variables.gradle",
+      "bytes": 498,
+      "sha256": "83d502c9ed8fcf1dd4791482067abeedbebae49fafe9cd14a8a1f5891deb0d88"
+    },
+    {
+      "path": "app.js",
+      "category": "根目录",
+      "purpose": "课程、能力阶段、复习与本地进度主逻辑",
+      "bytes": 134923,
+      "sha256": "8fd2482c8e8cb196a741e15403443f5eb077c9156862b26ca0f3e458b179f561"
+    },
+    {
+      "path": "apple-touch-icon.png",
+      "category": "根目录",
+      "purpose": "iOS 主屏幕图标",
+      "bytes": 9294,
+      "sha256": "1c5c5314f261637de26dd43ae6039acb1a65b1c15a4052fc20379bebac94ecfa"
+    },
+    {
+      "path": "assets/logo.svg",
+      "category": "assets",
+      "purpose": "十一说品牌 SVG",
+      "bytes": 534,
+      "sha256": "7d19e529f32a2df34b2f4999d91987801710f7e0c8eddff4ef97efc078926cbe"
+    },
+    {
+      "path": "audio/cafe-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：cafe-1",
+      "bytes": 14657,
+      "sha256": "6195b5912b61f32d40fba5f88371814f312a07c2fcfb95e2d1df0974580df66b"
+    },
+    {
+      "path": "audio/cafe-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：cafe-2",
+      "bytes": 11674,
+      "sha256": "7e92c262222dff9151c2df44847708a6c94df4272004e2bf62193cbd4d927e60"
+    },
+    {
+      "path": "audio/cafe-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：cafe-3",
+      "bytes": 11276,
+      "sha256": "d237090010d1ec9b24b7ad48b0ee23b680f7ebdfe158d797834fbf3a5a6b1d19"
+    },
+    {
+      "path": "audio/cafe-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：cafe-4",
+      "bytes": 16265,
+      "sha256": "507765f16ac2233d251e4b26345f9a0a8310278cb8b2c84e03728f313c105075"
+    },
+    {
+      "path": "audio/cafe-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：cafe-5",
+      "bytes": 14008,
+      "sha256": "40cef345945d0ae36dcd39045ca445c2666e0ea041c647ed10dedd9715e44661"
+    },
+    {
+      "path": "audio/rescue-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：rescue-1",
+      "bytes": 15788,
+      "sha256": "c5b7442a2178447f4789bb499d3ab9303cb09eba3dd52a93fbbdc84f5b0fbbb8"
+    },
+    {
+      "path": "audio/rescue-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：rescue-2",
+      "bytes": 13963,
+      "sha256": "8e62bd1aa5d5652cbe8af30cc5986228244c28b8f48037d2fdc286207759a112"
+    },
+    {
+      "path": "audio/rescue-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：rescue-3",
+      "bytes": 12030,
+      "sha256": "130cf7cad8f1ab97e1dd55b2733de1b3e44861dfec56792622eec7acbeefd2a9"
+    },
+    {
+      "path": "audio/rescue-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：rescue-4",
+      "bytes": 9195,
+      "sha256": "8df74b79f736360d9ed95a132c9d2330e9167e076cef6b5550c4c2f1d0c22aa4"
+    },
+    {
+      "path": "audio/rescue-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：rescue-5",
+      "bytes": 12746,
+      "sha256": "0c4da10b1dba524e7464cc526b17109792b91aefa7ec562a2d19114c5c06b894"
+    },
+    {
+      "path": "audio/shopping-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：shopping-1",
+      "bytes": 16125,
+      "sha256": "00705f8af002e4d0b06a51534e4adae5558d62b736825121ce3db5f668bd4a14"
+    },
+    {
+      "path": "audio/shopping-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：shopping-2",
+      "bytes": 10618,
+      "sha256": "e4cb33872f3001d521e4f0e9140ce3307167c56a0c4d51627cc137c5048c782c"
+    },
+    {
+      "path": "audio/shopping-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：shopping-3",
+      "bytes": 10991,
+      "sha256": "901d1b8a7495b9e9f1783f40d2cdf7032eb46d715b4e8e7a6eff3ea3a36b0f20"
+    },
+    {
+      "path": "audio/shopping-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：shopping-4",
+      "bytes": 9520,
+      "sha256": "76bf7f19a6df0bcc00f11a2acea7bceb7c174d2fee558bb36a9400545dc2f1a4"
+    },
+    {
+      "path": "audio/shopping-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：shopping-5",
+      "bytes": 9582,
+      "sha256": "79ee1f0ed69f62a19eb91da0f7e314cd4907f1ca8e572c01aa14a6909438dc88"
+    },
+    {
+      "path": "audio/social-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：social-1",
+      "bytes": 11021,
+      "sha256": "7535376a2769a63c119f3e1c9795f566b759096062f6bade6ba9791908f90e33"
+    },
+    {
+      "path": "audio/social-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：social-2",
+      "bytes": 10032,
+      "sha256": "95d74d3027711a3385219c10f99d98be67910ce828938073e79a2781f987726a"
+    },
+    {
+      "path": "audio/social-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：social-3",
+      "bytes": 9380,
+      "sha256": "1dc4b3e2beb180530c538c2263a7ae53b0c93e80f55a2ff38c26be9f6b065f4d"
+    },
+    {
+      "path": "audio/social-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：social-4",
+      "bytes": 9833,
+      "sha256": "f9e8b92f0f74fc729e1eae0ac3800c652d291d773565cfd41400ea9387375a94"
+    },
+    {
+      "path": "audio/social-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：social-5",
+      "bytes": 11133,
+      "sha256": "0bf502eb18044a8f87b74dfe4cc8a10bb9dd70bec42e251a715572647c5ce2f0"
+    },
+    {
+      "path": "audio/travel-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：travel-1",
+      "bytes": 16177,
+      "sha256": "6e63f42f49c12352b5ad22de73406e459e8f9c7649e001e49b87bb8fb14db18b"
+    },
+    {
+      "path": "audio/travel-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：travel-2",
+      "bytes": 8487,
+      "sha256": "a06ced6214a49e6723cfed8898375758f0e4b1246971f86cc7f8e72e308bfaf3"
+    },
+    {
+      "path": "audio/travel-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：travel-3",
+      "bytes": 10227,
+      "sha256": "d527a5fc9ab6a9a4f668780e31b719819f014613501e867ea3a2e148637f68fd"
+    },
+    {
+      "path": "audio/travel-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：travel-4",
+      "bytes": 11746,
+      "sha256": "1aaf0e4a224d6db328a53dc024e8de63374290bf29f5ec5612e7b1252c76b40c"
+    },
+    {
+      "path": "audio/travel-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：travel-5",
+      "bytes": 9520,
+      "sha256": "8b3a9a52390f12717cea80dbba449f9b9c3563f07b1bd1ed891faaab472f5228"
+    },
+    {
+      "path": "audio/word-cafe-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-cafe-1",
+      "bytes": 7178,
+      "sha256": "a795cda2a80b8062bc542600eb4bfad66212c455baaeb4c72ddbd7a7b52f7b37"
+    },
+    {
+      "path": "audio/word-cafe-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-cafe-2",
+      "bytes": 7810,
+      "sha256": "51ac412fa62054ff01a52572b77ed9a41c60aa3551df976e16f5d9d6d9adcacf"
+    },
+    {
+      "path": "audio/word-cafe-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-cafe-3",
+      "bytes": 8427,
+      "sha256": "69a21eef95fd94c06dbe9b9af53da6b1fc02370c1474b4d464c366ab83390e9b"
+    },
+    {
+      "path": "audio/word-cafe-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-cafe-4",
+      "bytes": 8080,
+      "sha256": "63886786fbde6dea34cd0aaecb55870f1f02bf27dacdc392ceb40fff656b0462"
+    },
+    {
+      "path": "audio/word-cafe-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-cafe-5",
+      "bytes": 7480,
+      "sha256": "0da51a8dec85651324792a6b9601e1f7ba0adf2c6a96bf97602cd74997e93ecd"
+    },
+    {
+      "path": "audio/word-rescue-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-rescue-1",
+      "bytes": 8502,
+      "sha256": "4b918d5db4cbd8c9e4218ca20bf95b2ff8fd9a2b6b8337ec480aa7cecd9127d2"
+    },
+    {
+      "path": "audio/word-rescue-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-rescue-2",
+      "bytes": 8724,
+      "sha256": "5faa540673e01a42fd672dfde5ad882e1734924cf6169b23143932c24da34eda"
+    },
+    {
+      "path": "audio/word-rescue-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-rescue-3",
+      "bytes": 8499,
+      "sha256": "1f6cb583c050f33ce9599085766c9c4a0020e0426394f0ff2fe62879f088d5da"
+    },
+    {
+      "path": "audio/word-rescue-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-rescue-4",
+      "bytes": 7821,
+      "sha256": "757304af99133f76e88f033e39c7b368a9fe9ed007719f82bc6a0ebccac58ea8"
+    },
+    {
+      "path": "audio/word-rescue-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-rescue-5",
+      "bytes": 7985,
+      "sha256": "540c581857f04651fc0f9384b863fbfdb630328e969586ad1d196c58284dc4f5"
+    },
+    {
+      "path": "audio/word-shopping-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-shopping-1",
+      "bytes": 7739,
+      "sha256": "6ba3c14ed718ec514e682b0776340925a03b9c574649847495f374fbc1e369b1"
+    },
+    {
+      "path": "audio/word-shopping-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-shopping-2",
+      "bytes": 9452,
+      "sha256": "a56433a6b6e17bdf4da79b6814ed115d8e5f75c779e9d617e6df4fce7e4186f0"
+    },
+    {
+      "path": "audio/word-shopping-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-shopping-3",
+      "bytes": 8354,
+      "sha256": "9a02c6fd2f5197b874d9fb9e86b8384f30bcdc6cd1aa29be18a327862792efc9"
+    },
+    {
+      "path": "audio/word-shopping-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-shopping-4",
+      "bytes": 8237,
+      "sha256": "bdce315d7e8b4dc798ad61ef24cf5957732b15dc3eebb0a698a1093b902b05db"
+    },
+    {
+      "path": "audio/word-shopping-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-shopping-5",
+      "bytes": 7557,
+      "sha256": "ee3015781eba1bcb105aafb1daed608b4c2cf00a3a91d9e82ad8c0f53c2d35d3"
+    },
+    {
+      "path": "audio/word-social-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-social-1",
+      "bytes": 7124,
+      "sha256": "b708aa1f248260b755e7b08926799d7f35ef4f412ee0cf57f1e759f9713cd708"
+    },
+    {
+      "path": "audio/word-social-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-social-2",
+      "bytes": 7535,
+      "sha256": "021e31e389a3669e881172772b5c2ae9b05d9c6e1985c06dc9d60611695cbbd1"
+    },
+    {
+      "path": "audio/word-social-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-social-3",
+      "bytes": 8286,
+      "sha256": "4ffa9e8556d6ddf6906e6195f40312c6bf8ddc5def1ffb765d2ef31ae20ee6fa"
+    },
+    {
+      "path": "audio/word-social-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-social-4",
+      "bytes": 8217,
+      "sha256": "58b6eeade89825dbf1cbd592cfb1f6af670a2045acadea2aeddd119f64c5a682"
+    },
+    {
+      "path": "audio/word-social-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-social-5",
+      "bytes": 9306,
+      "sha256": "ae2af5e42645eeed26342e7199564f46a72cac1221dc3eac6e5f1a2dd8c4488d"
+    },
+    {
+      "path": "audio/word-travel-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-travel-1",
+      "bytes": 8996,
+      "sha256": "bb5697b1afc7d2cd567c2f5eb84a6dbb7ebbd94f3c96cd8bad132430999a9718"
+    },
+    {
+      "path": "audio/word-travel-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-travel-2",
+      "bytes": 8323,
+      "sha256": "6b34fe1dc049ea874119443e91ecb180d5d9fa6f7c169a741145e5ec703bd8a9"
+    },
+    {
+      "path": "audio/word-travel-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-travel-3",
+      "bytes": 7462,
+      "sha256": "16d7b75162123038582da967385365a3b68c22aa22276bca479c9f93ff45a512"
+    },
+    {
+      "path": "audio/word-travel-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-travel-4",
+      "bytes": 7955,
+      "sha256": "114a3b5c3cb6ef85224187bf2703cb6778437ec579679feef62cd6c541c9a808"
+    },
+    {
+      "path": "audio/word-travel-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-travel-5",
+      "bytes": 8237,
+      "sha256": "69b195310661fa5aae8916454a9131e8220aae6026a5fa1b5207cf2ca682ddae"
+    },
+    {
+      "path": "audio/word-work-1.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-work-1",
+      "bytes": 7775,
+      "sha256": "9387b54eff3295b805810528086580040ae770ba27db2feb327f5fe632ea8462"
+    },
+    {
+      "path": "audio/word-work-2.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-work-2",
+      "bytes": 9415,
+      "sha256": "32a6fce3b120a22aa9ea63abced00c74aa12ac44887676a8408d928bc91ceb0f"
+    },
+    {
+      "path": "audio/word-work-3.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-work-3",
+      "bytes": 7176,
+      "sha256": "fbb4540156cefe6371b722c05102f651bd31a209fe41ee6bdbba46edbe968f94"
+    },
+    {
+      "path": "audio/word-work-4.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-work-4",
+      "bytes": 8112,
+      "sha256": "f2a0c890c3ca16642d781c98ac69b72af3ddb8de7093e8171c44f7ca439f3c0e"
+    },
+    {
+      "path": "audio/word-work-5.m4a",
+      "category": "audio",
+      "purpose": "词汇示范音频：word-work-5",
+      "bytes": 9215,
+      "sha256": "e74c480284a587c7ef85cd748365878bf372620a307908bc794e56075b8e5898"
+    },
+    {
+      "path": "audio/work-1.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：work-1",
+      "bytes": 15761,
+      "sha256": "80d0b0c73fe0814c02e75d2c5f80c1223fe3a3f388ff20c1137e6c6cd0fe95d9"
+    },
+    {
+      "path": "audio/work-2.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：work-2",
+      "bytes": 11239,
+      "sha256": "bff94717353233368d5bae9a68d841bd38a18bde4ab9227698f463c68751e5d9"
+    },
+    {
+      "path": "audio/work-3.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：work-3",
+      "bytes": 8811,
+      "sha256": "b8111e3841bfaf670ccd6deb40427a4c43cfbdded7e39caa0af73bab27e02d67"
+    },
+    {
+      "path": "audio/work-4.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：work-4",
+      "bytes": 9060,
+      "sha256": "86d7ae1e732041c0092553cdc59fac303302a369781eed780bdcdc02b0108a64"
+    },
+    {
+      "path": "audio/work-5.m4a",
+      "category": "audio",
+      "purpose": "句子示范音频：work-5",
+      "bytes": 14347,
+      "sha256": "81ab412d16c1832f6eefbbcfa6b269b600f7501734b56dd15e6bbfbaee7ec2a1"
+    },
+    {
+      "path": "capacitor.config.json",
+      "category": "根目录",
+      "purpose": "安卓 App 标识与 Web 同步目录",
+      "bytes": 203,
+      "sha256": "3879805a8cb8b45da119b43e0cf07ebfbd60d176d3023aed87603e5bc37b5a71"
+    },
+    {
+      "path": "docs/仓库文件索引.json",
+      "category": "docs",
+      "purpose": "大小、摘要、分类索引（自身摘要不自引用）",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "docs/仓库目录.md",
+      "category": "docs",
+      "purpose": "模块说明、主要入口及维护边界",
+      "bytes": 5150,
+      "sha256": "d4643443da6811bbd3b5e1392a66c6480dd74fa4177499c268597c88f33d8eef"
+    },
+    {
+      "path": "docs/文件清单.md",
+      "category": "docs",
+      "purpose": "全部文件用途清单（自身摘要不自引用）",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "downloads/character-sticker-studio/十一表情包-完整制作包-v1.0.0.sha256",
+      "category": "downloads",
+      "purpose": "完整 ZIP 的 SHA256 校验值",
+      "bytes": 109,
+      "sha256": "3041429db68290e2eb511c75a89b24e1a33fba5b60df7b6c5dac48a34cee620e"
+    },
+    {
+      "path": "downloads/character-sticker-studio/十一表情包-完整制作包-v1.0.0.zip",
+      "category": "downloads",
+      "purpose": "完整十一表情包制作发行 ZIP",
+      "bytes": 4609262,
+      "sha256": "35cfedf6b5783f91126d2ae2536b1cb5dcc15487171924feda0d77945d658940"
+    },
+    {
+      "path": "icon-192.png",
+      "category": "根目录",
+      "purpose": "PWA 192px 图标",
+      "bytes": 10055,
+      "sha256": "a01ac75b679325d0f2e85126e0393412e8fdfe865db5b18d73c04e5a2b8eff72"
+    },
+    {
+      "path": "icon-512.png",
+      "category": "根目录",
+      "purpose": "PWA 512px 图标",
+      "bytes": 21679,
+      "sha256": "08118d531ea734947933729df53253fae363f3d9e954b3b8ac9658d3373dc835"
+    },
+    {
+      "path": "icon.svg",
+      "category": "根目录",
+      "purpose": "十一说矢量图标",
+      "bytes": 534,
+      "sha256": "7d19e529f32a2df34b2f4999d91987801710f7e0c8eddff4ef97efc078926cbe"
+    },
+    {
+      "path": "index.html",
+      "category": "根目录",
+      "purpose": "十一说页面与交互入口",
+      "bytes": 30954,
+      "sha256": "62bffe2ec8cd681560d7ddd28896ee399365d1ed6afbeba504ceb97538af71e1"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "category": "根目录",
+      "purpose": "PWA 名称、图标与安装配置",
+      "bytes": 603,
+      "sha256": "2256fbe6126e7d7732417a836e36b8648e51176347b76cedea732eccdff53ffa"
+    },
+    {
+      "path": "package-lock.json",
+      "category": "根目录",
+      "purpose": "十一说依赖锁定",
+      "bytes": 100045,
+      "sha256": "4c4f1f988b71d22d6c28be50dceb0240756c8ca57fa7449002b886530e8a21da"
+    },
+    {
+      "path": "package.json",
+      "category": "根目录",
+      "purpose": "十一说依赖版本和任务脚本入口",
+      "bytes": 1104,
+      "sha256": "bab853b38e613d3bf37077a0c0a7d19a2f90b58e66f429a9e9b65f98bb6dcc70"
+    },
+    {
+      "path": "scripts/fetch-local-voice-assets.sh",
+      "category": "scripts",
+      "purpose": "下载并校验固定版本的安卓本地语音资产",
+      "bytes": 1557,
+      "sha256": "2a2be26a1c141f257f39f345d6b6d5120678b0ee76e4862ef879b41f1fb256c0"
+    },
+    {
+      "path": "scripts/generate-audio.mjs",
+      "category": "scripts",
+      "purpose": "生成固定句子与词汇语音，按需使用网络与用量",
+      "bytes": 3795,
+      "sha256": "fc38de37f6511602d0d893631326143419fe67c627802222d9f24a61ce4a6256"
+    },
+    {
+      "path": "scripts/sync-web.mjs",
+      "category": "scripts",
+      "purpose": "将根 Web 文件与音频复制到 app-web 构建目录",
+      "bytes": 857,
+      "sha256": "c4f1e9f1240dff81f0866e7096f764c3dafc87eab164852c0046050798d0d58e"
+    },
+    {
+      "path": "scripts/verify-ai.mjs",
+      "category": "scripts",
+      "purpose": "AI 场景、解析与记忆机制现有检查",
+      "bytes": 5010,
+      "sha256": "6915f4127b4b8328306ffc09feb6d17543b39177390f35c6eaf02523700f0241"
+    },
+    {
+      "path": "scripts/verify-audio.mjs",
+      "category": "scripts",
+      "purpose": "60 条本地音频的存在、数量与时长检查",
+      "bytes": 2755,
+      "sha256": "62484d47e9f2940714141e6b4f82b87f6127260210be47c83283752658318ae5"
+    },
+    {
+      "path": "scripts/verify-bailian-proxy.mjs",
+      "category": "scripts",
+      "purpose": "使用测试响应验证百炼文字中转",
+      "bytes": 2791,
+      "sha256": "6e588047a67d33fba64e708f0e58ec11d3f3d73397b3dc64dde5923cc1522bd2"
+    },
+    {
+      "path": "scripts/verify-brand.mjs",
+      "category": "scripts",
+      "purpose": "十一说品牌与安卓启动资源检查",
+      "bytes": 1378,
+      "sha256": "26573ea95dd2f44a1d3adc5bf5e56cdd980978a2b5cd7c87767cd76cd43c1d41"
+    },
+    {
+      "path": "scripts/verify-learning-flow.mjs",
+      "category": "scripts",
+      "purpose": "一步学习流、复习与迁移现有检查",
+      "bytes": 3095,
+      "sha256": "da6826a331b23e86d19199489f4ac790aa74fe558cb9f171f82a0725de6847f1"
+    },
+    {
+      "path": "scripts/verify-speech-check.mjs",
+      "category": "scripts",
+      "purpose": "跟读、麦克风与原生插件现有检查",
+      "bytes": 2673,
+      "sha256": "7f2700b9574b904c1f2d5ea366fe8496e4abbca91c76eee6c195e1e25e96d2b2"
+    },
+    {
+      "path": "server/bailian-proxy/.env.example",
+      "category": "server",
+      "purpose": "服务端环境变量占位模板，不是真实密钥",
+      "bytes": 439,
+      "sha256": "205380a9a92b5047cdb4c477aedde9861f00f85b8aeab9139fe5b7f256522d24"
+    },
+    {
+      "path": "server/bailian-proxy/README.md",
+      "category": "server",
+      "purpose": "百炼中转运行与保护说明",
+      "bytes": 2418,
+      "sha256": "df509b5761d573611afd5c375c7b8a7742df01842358aa67310922ff9b658b22"
+    },
+    {
+      "path": "server/bailian-proxy/core.mjs",
+      "category": "server",
+      "purpose": "固定文字模型请求与回复处理",
+      "bytes": 6385,
+      "sha256": "3cfffa529edddb145052c5bad234f9d7f8f7b6198bd081881491e32b52525adf"
+    },
+    {
+      "path": "server/bailian-proxy/package.json",
+      "category": "server",
+      "purpose": "中转服务启动配置",
+      "bytes": 187,
+      "sha256": "90b372b2065f41971a7beb3a5351a5a55b28185e4090c113407d945ed2156b53"
+    },
+    {
+      "path": "server/bailian-proxy/server.mjs",
+      "category": "server",
+      "purpose": "HTTP 服务、鉴权、配置和用量限制",
+      "bytes": 8014,
+      "sha256": "bf90cf7f482031043dded3bf82239b2a382c21d4e158e1d7a713223f6cc9a6a6"
+    },
+    {
+      "path": "skills/README.md",
+      "category": "skills",
+      "purpose": "十一 Skill 导航",
+      "bytes": 533,
+      "sha256": "2fbcd4bd9f6a8fcff6b8fbfa8c5e8ea21346aecada7a4258e580fc34429e4a98"
+    },
+    {
+      "path": "skills/character-sticker-studio/LICENSE.md",
+      "category": "skills",
+      "purpose": "Skill、商业成品与样片的使用范围",
+      "bytes": 1251,
+      "sha256": "8ed2058f5887db8f555b3776b5ea54bf321faabcc424e0532d8254dded8e9bc2"
+    },
+    {
+      "path": "skills/character-sticker-studio/NOTICE.md",
+      "category": "skills",
+      "purpose": "发行、验证与第三方依赖说明",
+      "bytes": 1461,
+      "sha256": "4c496b4c8ab839f4539059583e70dbfdb5d42022c0011c10dc3c120d92d38637"
+    },
+    {
+      "path": "skills/character-sticker-studio/README.md",
+      "category": "skills",
+      "purpose": "买家安装、调用、演示及免费获取说明",
+      "bytes": 4227,
+      "sha256": "52ef0db80a31d82bfe39ffe553a89bea271eb3fd6a9fef744d348d673d6ef19a"
+    },
+    {
+      "path": "skills/character-sticker-studio/SKILL.md",
+      "category": "skills",
+      "purpose": "技能触发条件与人物表情工作流",
+      "bytes": 9840,
+      "sha256": "ddf48a499890297e76dddeb58b8258720cd98fca531c86034e1886dcee0ebb35"
+    },
+    {
+      "path": "skills/character-sticker-studio/agents/openai.yaml",
+      "category": "skills",
+      "purpose": "Codex 中文展示名与调用提示",
+      "bytes": 317,
+      "sha256": "b367794014a7d88b8b7cc27056e0eaf2ab3bcc2729e872c9418abc911b58f7a2"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/character-brief.md",
+      "category": "skills",
+      "purpose": "人物、服装、配饰与动作记录模板",
+      "bytes": 2775,
+      "sha256": "d826675413f55a8c5b01608299e5f6339e029947f776f0070b099217ec2fa818"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/personal-use.md",
+      "category": "skills",
+      "purpose": "个人微信使用指引模板",
+      "bytes": 1544,
+      "sha256": "a26a5e47b09049fe13e140c3852fdf8d6ed2299d9695f525afb4b0693cf9ae4e"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/session-handoff.md",
+      "category": "skills",
+      "purpose": "中断与跨端接续模板",
+      "bytes": 1432,
+      "sha256": "c7a570004270c744448b349668efdcc4dc463dccfaf1cca702ee734fa2758c36"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/style/approved-detail.png",
+      "category": "skills",
+      "purpose": "获准内置的细节画风参考",
+      "bytes": 2198665,
+      "sha256": "711268af11a441540d4f1c12d292d7807886b0142eb47fb01cc1b87978b6c86c"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/style/original24-greeting.png",
+      "category": "skills",
+      "purpose": "获准内置的原版主画风参考",
+      "bytes": 1456765,
+      "sha256": "da5f89342489012595b1e78e5d3b351112456c2bd4a7ebaf1a276696441a868a"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/style/original24-overview.jpg",
+      "category": "skills",
+      "purpose": "原版24款静态总览，用于复核",
+      "bytes": 424170,
+      "sha256": "a2a472bcda106e5aec3044708ce11b3ee488b9d2267dc2db145c872ceddcbdd4"
+    },
+    {
+      "path": "skills/character-sticker-studio/assets/style/style-lock.json",
+      "category": "skills",
+      "purpose": "三张内置画风资产的角色与 SHA256",
+      "bytes": 1876,
+      "sha256": "3b4b7481e9976af86677fa09116576172710a05f493f348ef49a325fea846ec8"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/01-你好.gif",
+      "category": "skills",
+      "purpose": "既有授权 AI 辅助漫画动图演示：01-你好",
+      "bytes": 124320,
+      "sha256": "43c4224edcced5c009a8cceefcb052c7ebceb5d82526efffb98d9af588055a37"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/06-好的.gif",
+      "category": "skills",
+      "purpose": "既有授权 AI 辅助漫画动图演示：06-好的",
+      "bytes": 125041,
+      "sha256": "6fb70f4e3c6f9e260f44b9b5799592542bcdecb4709461e13b38b9e2fd690a80"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/13-比心.gif",
+      "category": "skills",
+      "purpose": "既有授权 AI 辅助漫画动图演示：13-比心",
+      "bytes": 127366,
+      "sha256": "09f9660a54a81b40b8351a67c0038c1b336430119014978676d2b75055d22774"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/16-哈哈哈.gif",
+      "category": "skills",
+      "purpose": "既有授权 AI 辅助漫画动图演示：16-哈哈哈",
+      "bytes": 127149,
+      "sha256": "7063268cfae8c9c1fd2bd8df5c6f3fa9d31ea1de415747950ffa8903a95ab809"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/README.md",
+      "category": "skills",
+      "purpose": "既有授权演示说明",
+      "bytes": 700,
+      "sha256": "0d4e5b3549990a068408bc670e82ead7ee5c8b00806bfe51a72d3d4e80ce133c"
+    },
+    {
+      "path": "skills/character-sticker-studio/examples/preview.html",
+      "category": "skills",
+      "purpose": "四款 GIF 的离线动态预览",
+      "bytes": 1275,
+      "sha256": "23129c28960641ab6ea8a453eea3ddf6e9378fac1913d81bd5bc73e62004270b"
+    },
+    {
+      "path": "skills/character-sticker-studio/package.json",
+      "category": "skills",
+      "purpose": "导出依赖与版本元数据",
+      "bytes": 295,
+      "sha256": "9045e73924bd9e8f22aa6d13eeb1b8ad60e47dc8557c066004fdb36a389dcf23"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/character-and-motion.md",
+      "category": "skills",
+      "purpose": "角色与动作规范",
+      "bytes": 4415,
+      "sha256": "00bb9294ab47057515205a29753bf9b3a9fb6076bbc0039b0e268d7e9f4b2c77"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/commercial-boundaries.md",
+      "category": "skills",
+      "purpose": "售前、公开下载、成品商业使用与发布边界",
+      "bytes": 3128,
+      "sha256": "663d39ccc06bc42106a41b943e772b72ef14366b8370e61d8351154c88610d8f"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/customer-journey.md",
+      "category": "skills",
+      "purpose": "首次使用、返修与交付流程",
+      "bytes": 4365,
+      "sha256": "a1aee8449e9307ef4b9a6f1819dad7e7d5da2359316299684171b7187d62b742"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/fixed-style.md",
+      "category": "skills",
+      "purpose": "固定画风及母版恢复",
+      "bytes": 8119,
+      "sha256": "70e7a49713703830ffe867fd3f3eb47625113a7653250b8665391d6f52843f98"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/generation-recipe.md",
+      "category": "skills",
+      "purpose": "真实内置样片绘图步骤",
+      "bytes": 4340,
+      "sha256": "3fee8adc2cd2ee3b7d5401c8863b8b9174b9d4c40f4a82a02a6994843db9d798"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/hosts.md",
+      "category": "skills",
+      "purpose": "各宿主官方接入口与未验证范围",
+      "bytes": 4941,
+      "sha256": "bde25007538d476133a9160de70ad158a4a978ea30cb27d0a3c2daa84c281436"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/quality-and-repair.md",
+      "category": "skills",
+      "purpose": "逐帧视觉检查与局部返修",
+      "bytes": 4241,
+      "sha256": "2ab6f9ca2d40db5b5d4407669b9e87e49cb2893ebd9372c51c95062f2f0677c0"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/runtime.md",
+      "category": "skills",
+      "purpose": "运行能力检查与手机接续",
+      "bytes": 4153,
+      "sha256": "fcc8282922d6d2da1bc13ceb4fedc7fd0e6bf2dfb9e2e1ba41e25391018566ba"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/tooling.md",
+      "category": "skills",
+      "purpose": "工具参数、配置与故障处理",
+      "bytes": 6673,
+      "sha256": "cd3656591b95cfbc23d96f7b4a6b125799401cc5645f698c86a32a0d2d45821e"
+    },
+    {
+      "path": "skills/character-sticker-studio/references/wechat-profile.md",
+      "category": "skills",
+      "purpose": "微信规范快照，正式投稿需再核验",
+      "bytes": 2238,
+      "sha256": "18f4a85d978bd1e26c440031f4df040902a9cf7bd7ffa61b49294f180f6f130e"
+    },
+    {
+      "path": "skills/character-sticker-studio/scripts/resolve-style.cjs",
+      "category": "skills",
+      "purpose": "内置画风资产路径与摘要验证",
+      "bytes": 2473,
+      "sha256": "2ef3b191320df541302416099f9cea7f474342eb9861fe4b7dfd6ad5ff3e96ff"
+    },
+    {
+      "path": "skills/character-sticker-studio/scripts/runtime-check.cjs",
+      "category": "skills",
+      "purpose": "实际 Node/sharp/GIF 编码能力检查",
+      "bytes": 3230,
+      "sha256": "352baa0237313675f8c74cfe480cca58c2a7f5946f978881c7ce67c1a1f3915e"
+    },
+    {
+      "path": "skills/character-sticker-studio/scripts/sticker-kit.cjs",
+      "category": "skills",
+      "purpose": "项目初始化、透明 GIF 导出、检查和交付打包",
+      "bytes": 24253,
+      "sha256": "3856acbfe3adca99f40124d4ee609d330c18ce968b6b08b4817f0231ee168fef"
+    },
+    {
+      "path": "skills/character-sticker-studio/tests/resolve-style.test.cjs",
+      "category": "skills",
+      "purpose": "已有工具行为测试：resolve-style.test",
+      "bytes": 2302,
+      "sha256": "0dc3acc4633ac38b217e6b36e494e8abc61fea1b13cdbba9786317ae36c2e096"
+    },
+    {
+      "path": "skills/character-sticker-studio/tests/runtime-check.test.cjs",
+      "category": "skills",
+      "purpose": "已有工具行为测试：runtime-check.test",
+      "bytes": 1957,
+      "sha256": "ea2b6786951e63668b8eae0e56d9f943b06f369a7ee5e4e5e2f642e4c8d69276"
+    },
+    {
+      "path": "skills/character-sticker-studio/tests/sticker-kit.test.cjs",
+      "category": "skills",
+      "purpose": "已有工具行为测试：sticker-kit.test",
+      "bytes": 8743,
+      "sha256": "8f605c654c45772891b0faa92fc865fa23d4e3dbf925ac449080c2d3b67d5dbf"
+    },
+    {
+      "path": "speech-check.js",
+      "category": "根目录",
+      "purpose": "英语跟读可懂度判断",
+      "bytes": 5078,
+      "sha256": "94b163ede580fe9d6e4d1da95f10ab8a3789aa21a491b0e0eb1316ebabdcaab2"
+    },
+    {
+      "path": "styles.css",
+      "category": "根目录",
+      "purpose": "十一说页面视觉样式",
+      "bytes": 74551,
+      "sha256": "adf33cf9f4bcd2dc428244465e8e04e9ffa2417fb44ca25a281ac7182413650a"
+    },
+    {
+      "path": "sw.js",
+      "category": "根目录",
+      "purpose": "PWA 缓存与离线更新",
+      "bytes": 2918,
+      "sha256": "3289bd735ed7880ad24c2d9a47247fbe6778e23d987f41baf239a88812169d58"
+    },
+    {
+      "path": "使用说明.md",
+      "category": "根目录",
+      "purpose": "十一说功能、隐私与使用说明",
+      "bytes": 9407,
+      "sha256": "41e7690866586b172c3c754d00bf9c48180121bd7519b38f75d1ddb586712645"
+    },
+    {
+      "path": "安卓自测说明.md",
+      "category": "根目录",
+      "purpose": "V2.7.0 私人 APK 安装与首轮验证",
+      "bytes": 3860,
+      "sha256": "5a2aa26fcf5ffcd1c9d8fceb0324a5f6b2a2f4772e8cbbcf2a384437c229ea87"
+    },
+    {
+      "path": "真机兼容测试清单.md",
+      "category": "根目录",
+      "purpose": "待完成的真实设备验收项",
+      "bytes": 5804,
+      "sha256": "01ab7344281918ce4053cc3b722f834ee945f2fa7a65eea2cc025b8dd9dd511f"
+    },
+    {
+      "path": "长期学习路线.md",
+      "category": "根目录",
+      "purpose": "长期课程与学习能力设计",
+      "bytes": 6187,
+      "sha256": "fbfdefd3d8bb931ed7c93e905483dd3c3851f9d1bc01e1e336688a8f35aad3cc"
+    },
+    {
+      "path": "项目状态与交接.md",
+      "category": "根目录",
+      "purpose": "原英语 App 恢复状态，保留历史标题",
+      "bytes": 22224,
+      "sha256": "8dcb97e97165b29e6e1dc97bc58e7f2e1e36ef66a24f47320e38ea7b5228d99b"
+    }
+  ]
+}

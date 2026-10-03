@@ -1,0 +1,4 @@
+interface:
+  display_name: "十一表情包"
+  short_description: "照片变成专属漫画表情，先看小样、按编号修改，再取回GIF加进微信"
+  default_prompt: "使用 $character-sticker-studio（十一表情包），帮我把照片做成自己的表情包，先给我一个小样看看像不像。"
